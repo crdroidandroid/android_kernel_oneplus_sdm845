@@ -242,7 +242,7 @@ bool mutex_spin_on_owner(struct mutex *lock, struct task_struct *owner)
 			break;
 		}
 
-		cpu_relax_lowlatency();
+		cpu_relax();
 	}
 	rcu_read_unlock();
 
@@ -378,18 +378,7 @@ static bool mutex_optimistic_spin(struct mutex *lock,
 		 * memory barriers as we'll eventually observe the right
 		 * values at the cost of a few extra spins.
 		 */
-		cpu_relax_lowlatency();
-
-		/*
-		 * On arm systems, we must slow down the waiter's repeated
-		 * aquisition of spin_mlock and atomics on the lock count, or
-		 * we risk starving out a thread attempting to release the
-		 * mutex. The mutex slowpath release must take spin lock
-		 * wait_lock. This spin lock can share a monitor with the
-		 * other waiter atomics in the mutex data structure, so must
-		 * take care to rate limit the waiters.
-		 */
-		udelay(1);
+		cpu_relax();
 	}
 
 	osq_unlock(&lock->osq);
