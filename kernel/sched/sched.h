@@ -4,6 +4,7 @@
 #include <linux/sched/rt.h>
 #include <linux/sched/smt.h>
 #include <linux/sched/cpufreq.h>
+#include <linux/sched/clock.h>
 #include <linux/u64_stats_sync.h>
 #include <linux/sched/deadline.h>
 #include <linux/kernel_stat.h>
