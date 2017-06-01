@@ -79,8 +79,7 @@ int __of_add_property_sysfs(struct device_node *np, struct property *pp)
 	pp->attr.read = of_node_property_read;
 
 	rc = sysfs_create_bin_file(&np->kobj, &pp->attr);
-	WARN(rc, "error adding attribute %s to node %s\n", pp->name,
-		np->full_name);
+	WARN(rc, "error adding attribute %s to node %pOF\n", pp->name, np);
 	return rc;
 }
 

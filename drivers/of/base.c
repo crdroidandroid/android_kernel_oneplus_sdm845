@@ -1565,7 +1565,7 @@ EXPORT_SYMBOL_GPL(of_property_read_string_helper);
 void of_print_phandle_args(const char *msg, const struct of_phandle_args *args)
 {
 	int i;
-	printk("%s %s", msg, of_node_full_name(args->np));
+	printk("%s %pOF", msg, args->np);
 	for (i = 0; i < args->args_count; i++)
 		printk(i ? ",%08x" : ":%08x", args->args[i]);
 	printk("\n");
@@ -1623,17 +1623,17 @@ int of_phandle_iterator_next(struct of_phandle_iterator *it)
 
 		if (it->cells_name) {
 			if (!it->node) {
-				pr_err("%s: could not find phandle\n",
-				       it->parent->full_name);
+				pr_err("%pOF: could not find phandle\n",
+				       it->parent);
 				goto err;
 			}
 
 			if (of_property_read_u32(it->node, it->cells_name,
 						 &count)) {
-				pr_err("%s: could not get %s for %s\n",
-				       it->parent->full_name,
+				pr_err("%pOF: could not get %s for %pOF\n",
+				       it->parent,
 				       it->cells_name,
-				       it->node->full_name);
+				       it->node);
 				goto err;
 			}
 		} else {
@@ -1645,8 +1645,8 @@ int of_phandle_iterator_next(struct of_phandle_iterator *it)
 		 * property data length
 		 */
 		if (it->cur + count > it->list_end) {
-			pr_err("%s: arguments longer than property\n",
-			       it->parent->full_name);
+			pr_err("%pOF: arguments longer than property\n",
+			       it->parent);
 			goto err;
 		}
 	}
@@ -2046,8 +2046,8 @@ static void of_alias_add(struct alias_prop *ap, struct device_node *np,
 	strncpy(ap->stem, stem, stem_len);
 	ap->stem[stem_len] = 0;
 	list_add_tail(&ap->link, &aliases_lookup);
-	pr_debug("adding DT alias:%s: stem=%s id=%i node=%s\n",
-		 ap->alias, ap->stem, ap->id, of_node_full_name(np));
+	pr_debug("adding DT alias:%s: stem=%s id=%i node=%pOF\n",
+		 ap->alias, ap->stem, ap->id, np);
 }
 
 /**
