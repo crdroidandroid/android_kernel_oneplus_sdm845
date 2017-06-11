@@ -4,7 +4,7 @@
 
 # Each configuration option enables a list of files.
 
-obj-$(CONFIG_INPUT)		+= input-core.o
+obj-$(CONFIG_INPUT)		+= input-core.o pocket-judge.o
 input-core-y := input.o input-compat.o input-mt.o ff-core.o
 
 obj-$(CONFIG_INPUT_FF_MEMLESS)	+= ff-memless.o
