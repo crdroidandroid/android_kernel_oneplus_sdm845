@@ -44,7 +44,7 @@ enum {
 	EFFECTIVE_LIST,
 };
 
-static int show_irq_affinity(int type, struct seq_file *m, void *v)
+static int show_irq_affinity(int type, struct seq_file *m)
 {
 	struct irq_desc *desc = irq_to_desc((long)m->private);
 	const struct cpumask *mask;
@@ -108,12 +108,12 @@ static int irq_affinity_hint_proc_show(struct seq_file *m, void *v)
 int no_irq_affinity;
 static int irq_affinity_proc_show(struct seq_file *m, void *v)
 {
-	return show_irq_affinity(AFFINITY, m, v);
+	return show_irq_affinity(AFFINITY, m);
 }
 
 static int irq_affinity_list_proc_show(struct seq_file *m, void *v)
 {
-	return show_irq_affinity(AFFINITY_LIST, m, v);
+	return show_irq_affinity(AFFINITY_LIST, m);
 }
 
 
