@@ -7849,6 +7849,8 @@ static int select_energy_cpu_brute(struct task_struct *p, int prev_cpu,
 
 	fbt_env.placement_boost = task_boost_policy(p);
 
+	sync_entity_load_avg(&p->se);
+
 	sd = rcu_dereference(per_cpu(sd_ea, prev_cpu));
 	if (!sd) {
 		target_cpu = prev_cpu;
