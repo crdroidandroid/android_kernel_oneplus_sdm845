@@ -155,7 +155,7 @@ struct scan_control {
 /*
  * From 0 .. 100.  Higher means more swappy.
  */
-int vm_swappiness = 60;
+int vm_swappiness = 8;
 #ifdef CONFIG_KSWAPD_LAZY_RECLAIM
 /*
  * time for kswapd to breath between each scanning loop
