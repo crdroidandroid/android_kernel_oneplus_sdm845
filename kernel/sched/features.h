@@ -107,3 +107,8 @@ SCHED_FEAT(HISI_FILTER, true)
  * active costs of CPUs.
  */
 SCHED_FEAT(EAS_SIMPLIFIED_EM, true)
+
+/*
+ * Fast pre-selection of CPU candidates for EAS.
+ */
+SCHED_FEAT(FIND_BEST_TARGET, true)
