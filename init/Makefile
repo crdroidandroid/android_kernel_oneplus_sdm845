@@ -2,7 +2,7 @@
 # Makefile for the linux kernel.
 #
 
-ccflags-y := -fno-function-sections -fno-data-sections
+ccflags-y := -fno-function-sections -fno-data-sections -Wno-unused-function
 
 obj-y                          := main.o version.o mounts.o
 obj-y                          += noinitramfs.o

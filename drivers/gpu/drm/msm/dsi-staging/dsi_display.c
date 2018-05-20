@@ -7878,6 +7878,7 @@ int dsi_display_read_serial_number(struct dsi_display *dsi_display,
 		flags |= DSI_CTRL_CMD_LAST_COMMAND;
 	}
 	flags |= (DSI_CTRL_CMD_FETCH_MEMORY | DSI_CTRL_CMD_READ);
+
 	if (!m_ctrl->ctrl->vaddr)
 		goto error;
 
@@ -8340,6 +8341,7 @@ int dsi_display_read_panel_id(struct dsi_display *dsi_display,
 		flags |= DSI_CTRL_CMD_LAST_COMMAND;
 	}
 	flags |= (DSI_CTRL_CMD_FETCH_MEMORY | DSI_CTRL_CMD_READ);
+
 	if (!m_ctrl->ctrl->vaddr)
 		goto error;
 
