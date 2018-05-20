@@ -669,8 +669,10 @@ static int iw_handler_get_iwstats(struct net_device *		dev,
 
 	stats = get_wireless_stats(dev);
 	if (stats) {
-		/* Copy statistics to extra */
-		memcpy(extra, stats, sizeof(struct iw_statistics));
+		if (extra != NULL){
+			/* Copy statistics to extra */
+			memcpy(extra, stats, sizeof(struct iw_statistics));
+		}
 		wrqu->data.length = sizeof(struct iw_statistics);
 
 		/* Check if we need to clear the updated flag */

@@ -4618,12 +4618,6 @@ static int dsi_display_set_mode_sub(struct dsi_display *display,
 
 	for (i = 0; i < display->ctrl_count; i++) {
 		ctrl = &display->ctrl[i];
-		/*
-		 * if bit clock is overridden then update the phy timings
-		 * and clock out control values first.
-		 */
-		if (config->bit_clk_rate_hz)
-			dsi_phy_update_phy_timings(ctrl->phy, config);
 
 		rc = dsi_ctrl_update_host_config(ctrl->ctrl, config,
 						 mode->dsi_mode_flags,
