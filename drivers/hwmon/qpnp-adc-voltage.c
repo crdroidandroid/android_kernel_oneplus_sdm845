@@ -521,7 +521,7 @@ static int qpnp_vadc_hc_pre_configure_usb_in(struct qpnp_vadc_chip *vadc,
 
 	/* Setup dig params for USB_IN_V */
 	conv.decimation = DECIMATION_TYPE2;
-	conv.cal_val = ADC_HC_ABS_CAL;
+	conv.calib_type = ADC_HC_ABS_CAL;
 	conv.calib_type = vadc->adc->adc_channels[dt_index].calib_type;
 
 	qpnp_vadc_hc_update_adc_dig_param(vadc, &conv, &dig_param);
@@ -1630,7 +1630,7 @@ int32_t qpnp_vadc_calib_vref(struct qpnp_vadc_chip *vadc,
 	conv.mode_sel = ADC_OP_NORMAL_MODE << QPNP_VADC_OP_MODE_SHIFT;
 	conv.hw_settle_time = ADC_CHANNEL_HW_SETTLE_DELAY_0US;
 	conv.fast_avg_setup = ADC_FAST_AVG_SAMPLE_1;
-	conv.cal_val = calib_type;
+	conv.calib_type = calib_type;
 
 	if (vadc->vadc_hc) {
 		rc = qpnp_vadc_hc_configure(vadc, &conv);
@@ -1703,7 +1703,7 @@ int32_t qpnp_vadc_calib_gnd(struct qpnp_vadc_chip *vadc,
 	conv.mode_sel = ADC_OP_NORMAL_MODE << QPNP_VADC_OP_MODE_SHIFT;
 	conv.hw_settle_time = ADC_CHANNEL_HW_SETTLE_DELAY_0US;
 	conv.fast_avg_setup = ADC_FAST_AVG_SAMPLE_1;
-	conv.cal_val = calib_type;
+	conv.calib_type = calib_type;
 
 	if (vadc->vadc_hc) {
 		rc = qpnp_vadc_hc_configure(vadc, &conv);
