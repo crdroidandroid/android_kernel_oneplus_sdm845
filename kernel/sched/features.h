@@ -105,3 +105,4 @@ SCHED_FEAT(ENERGY_AWARE, false)
  * If disabled, boosts will only bias tasks to higher-capacity CPUs.
  */
 SCHED_FEAT(SCHEDTUNE_BOOST_UTIL, false)
+SCHED_FEAT(HISI_FILTER, true)
