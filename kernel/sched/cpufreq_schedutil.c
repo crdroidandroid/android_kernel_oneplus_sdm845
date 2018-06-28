@@ -69,6 +69,7 @@ struct sugov_cpu {
 	/* The fields below are only needed when sharing a policy. */
 	unsigned long util_cfs;
 	unsigned long util_dl;
+	unsigned long bw_dl;
 	unsigned long util_rt;
 	unsigned long util_irq;
 	unsigned long max;
@@ -233,6 +234,7 @@ static void sugov_get_util(struct sugov_cpu *sg_cpu)
 	sg_cpu->max = arch_scale_cpu_capacity(NULL, sg_cpu->cpu);
 	sg_cpu->util_cfs = cpu_util_cfs(rq);
 	sg_cpu->util_dl  = cpu_util_dl(rq);
+	sg_cpu->bw_dl    = cpu_bw_dl(rq);
 	sg_cpu->util_rt  = cpu_util_rt(rq);
 	sg_cpu->util_irq = cpu_util_irq(rq);
 }
@@ -267,6 +269,9 @@ static unsigned long sugov_aggregate_util(struct sugov_cpu *sg_cpu)
 
 	/* Add interrupt utilization */
 	util += sg_cpu->util_irq;
+
+	/* Add DL bandwidth requirement */
+	util += sg_cpu->bw_dl;
 
 	return min(max, util);
 }
