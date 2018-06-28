@@ -70,6 +70,7 @@ struct sugov_cpu {
 	unsigned long util_cfs;
 	unsigned long util_dl;
 	unsigned long util_rt;
+	unsigned long util_irq;
 	unsigned long max;
 	unsigned int flags;
 
@@ -233,22 +234,41 @@ static void sugov_get_util(struct sugov_cpu *sg_cpu)
 	sg_cpu->util_cfs = cpu_util_cfs(rq);
 	sg_cpu->util_dl  = cpu_util_dl(rq);
 	sg_cpu->util_rt  = cpu_util_rt(rq);
+	sg_cpu->util_irq = cpu_util_irq(rq);
 }
 
 static unsigned long sugov_aggregate_util(struct sugov_cpu *sg_cpu)
 {
-	unsigned long util;
+	unsigned long util, max = sg_cpu->max;
 
-	util = sg_cpu->util_dl;
-	util += sg_cpu->util_cfs;
+	if (unlikely(sg_cpu->util_irq >= max))
+		return max;
+
+	/* Sum rq utilization */
+	util = sg_cpu->util_cfs;
 	util += sg_cpu->util_rt;
+
+	/*
+	 * Interrupt time is not seen by RQS utilization so we can compare
+	 * them with the CPU capacity
+	 */
+	if ((util + sg_cpu->util_dl) >= max)
+		return max;
 
 	/*
 	 * Ideally we would like to set util_dl as min/guaranteed freq and
 	 * util_cfs + util_dl as requested freq. However, cpufreq is not yet
 	 * ready for such an interface. So, we only do the latter for now.
 	 */
-	return min(sg_cpu->max, util);
+
+	/* Weight RQS utilization to normal context window */
+	util *= (max - sg_cpu->util_irq);
+	util /= max;
+
+	/* Add interrupt utilization */
+	util += sg_cpu->util_irq;
+
+	return min(max, util);
 }
 
 static void sugov_set_iowait_boost(struct sugov_cpu *sg_cpu, u64 time,
