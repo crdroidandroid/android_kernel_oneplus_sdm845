@@ -103,14 +103,12 @@ KBUILD_AFLAGS	+= $(call cc-option,-mabi=lp64)
 ifeq ($(CONFIG_CPU_BIG_ENDIAN), y)
 KBUILD_CPPFLAGS += -mbig-endian
 AS		+= -EB
-LD		+= -EB
-KBUILD_LDFLAGS	+= -maarch64linuxb
+KBUILD_LDFLAGS	+= -EB $(call ld-option, -maarch64elfb, -maarch64linuxb)
 UTS_MACHINE	:= aarch64_be
 else
 KBUILD_CPPFLAGS += -mlittle-endian
 AS		+= -EL
-LD		+= -EL
-KBUILD_LDFLAGS	+= -maarch64linux
+KBUILD_LDFLAGS	+= -EL $(call ld-option, -maarch64elf, -maarch64linux)
 UTS_MACHINE	:= aarch64
 endif
 
