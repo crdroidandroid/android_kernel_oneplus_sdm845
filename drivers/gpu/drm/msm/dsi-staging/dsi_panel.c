@@ -925,7 +925,7 @@ extern int op_dimlayer_bl_alpha;
 extern int op_dimlayer_bl_enabled;
 extern int op_dimlayer_bl_enable_real;
 bool HBM_flag;
-static int dsi_panel_update_backlight(struct dsi_panel *panel,
+int dsi_panel_update_backlight(struct dsi_panel *panel,
 	u32 bl_lvl)
 {
 	int rc = 0;
@@ -1841,12 +1841,13 @@ const char *cmd_set_prop_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-timing-switch-command",
 	"qcom,mdss-dsi-post-mode-switch-on-command",
 	"qcom,mdss-dsi-panel-acl-command",
+	"qcom,mdss-dsi-panel-hbm-off-command",
 	"qcom,mdss-dsi-panel-hbm-on-command",//464
 	"qcom,mdss-dsi-panel-hbm-on-command-2",//498
 	"qcom,mdss-dsi-panel-hbm-on-command-3",//532
 	"qcom,mdss-dsi-panel-hbm-on-command-4",//566
 	"qcom,mdss-dsi-panel-hbm-on-command-5",//600
-	"qcom,mdss-dsi-panel-hbm-off-command",
+	"qcom,mdss-dsi-panel-hbm-max-brightness-command-on",
 	"qcom,mdss-dsi-panel-aod-on-command-1",//10-alpm
 	"qcom,mdss-dsi-panel-aod-on-command-2",//50
 	"qcom,mdss-dsi-panel-aod-on-command-3",//10-hlpm
@@ -1868,8 +1869,6 @@ const char *cmd_set_prop_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-panel-id6-command",
 	"qcom,mdss-dsi-panel-id7-command",
 	"qcom,mdss-dsi-panel-read-register-close-command",
-	"qcom,mdss-dsi-panel-hbm-max-brightness-command-on",
-	"qcom,mdss-dsi-panel-hbm-max-brightness-command-off",
 	"qcom,mdss-dsi-panel-aod-off-hbm-on-command",
 	"qcom,mdss-dsi-panel-hbm-off-aod-on-command",
 	"qcom,mdss-dsi-panel-real-aod-off-hbm-on-command",
@@ -1912,12 +1911,13 @@ const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-timing-switch-command-state",
 	"qcom,mdss-dsi-post-mode-switch-on-command-state",
 	"qcom,mdss-dsi-acl-command-state",
+	"qcom,mdss-dsi-hbm-off-command-state",//off
 	"qcom,mdss-dsi-hbm-on-command-state",//464
 	"qcom,mdss-dsi-hbm-on-command-state",//498
 	"qcom,mdss-dsi-hbm-on-command-state",//532
 	"qcom,mdss-dsi-hbm-on-command-state",//566
 	"qcom,mdss-dsi-hbm-on-command-state",//600
-	"qcom,mdss-dsi-hbm-off-command-state",//off
+	"qcom,mdss-dsi-panel-hbm-max-brightness-command-on-state",
 	"qcom,mdss-dsi-panel-aod-on-command-1-state",
 	"qcom,mdss-dsi-panel-aod-on-command-2-state",
 	"qcom,mdss-dsi-panel-aod-on-command-3-state",
@@ -1939,8 +1939,6 @@ const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-panel-id6-command-state",
 	"qcom,mdss-dsi-panel-id7-command-state",
 	"qcom,mdss-dsi-panel-read-register-close-command-state",
-	"qcom,mdss-dsi-panel-hbm-max-brightness-command-on-state",
-	"qcom,mdss-dsi-panel-hbm-max-brightness-command-off-state",
 	"qcom,mdss-dsi-panel-aod-off-hbm-on-command-state",
 	"qcom,mdss-dsi-panel-hbm-off-aod-on-command-state",
 	"qcom,mdss-dsi-panel-real-aod-off-hbm-on-command-state",
@@ -4391,8 +4389,10 @@ int dsi_panel_enable(struct dsi_panel *panel)
 	if (panel->adaption_mode)
 		dsi_panel_set_adaption_mode(panel, panel->adaption_mode);
 */
+
 	if (panel->hbm_mode)
-		dsi_panel_set_hbm_mode(panel, panel->hbm_mode);
+		dsi_panel_apply_hbm_mode(panel);
+
 	/* remove print actvie ws */
 	pm_print_active_wakeup_sources_queue(false);
 
@@ -4474,8 +4474,6 @@ int dsi_panel_disable(struct dsi_panel *panel)
 
 	/* Avoid sending panel off commands when ESD recovery is underway */
 	if (!atomic_read(&panel->esd_recovery_pending)) {
-		HBM_flag = false;
-
 		if (panel->aod_mode == 2)
 			panel->aod_status = 1;
 
@@ -4545,6 +4543,33 @@ error:
 	return rc;
 }
 
+int dsi_panel_apply_hbm_mode(struct dsi_panel *panel)
+{
+	static const enum dsi_cmd_set_type type_map[] = {
+		DSI_CMD_SET_HBM_OFF,
+		DSI_CMD_SET_HBM_ON_1,
+		DSI_CMD_SET_HBM_ON_2,
+		DSI_CMD_SET_HBM_ON_3,
+		DSI_CMD_SET_HBM_ON_4,
+		DSI_CMD_SET_HBM_ON_5,
+		DSI_CMD_SET_HBM_ON_6,
+	};
+
+	enum dsi_cmd_set_type type;
+	int rc;
+
+	if (panel->hbm_mode >= 0 && panel->hbm_mode < ARRAY_SIZE(type_map))
+		type = type_map[panel->hbm_mode];
+	else
+		type = DSI_CMD_SET_HBM_OFF;
+
+	mutex_lock(&panel->panel_lock);
+	rc = dsi_panel_tx_cmd_set(panel, type);
+	mutex_unlock(&panel->panel_lock);
+
+	return rc;
+}
+
 int dsi_panel_set_acl_mode(struct dsi_panel *panel, int level)
 {
 	int rc = 0;
@@ -4581,151 +4606,6 @@ error:
 
 	return rc;
 }
-
-int dsi_panel_set_hbm_mode(struct dsi_panel *panel, int level)
-{
-	int rc = 0;
-	u32 count;
-	struct dsi_display_mode *mode;
-
-	if (!panel || !panel->cur_mode) {
-		pr_err("Invalid params\n");
-		return -EINVAL;
-	}
-
-	mutex_lock(&panel->panel_lock);
-
-	mode = panel->cur_mode;
-	switch (level) {
-	case 0:
-		count = mode->priv_info->cmd_sets[DSI_CMD_SET_HBM_OFF].count;
-		if (!count) {
-			pr_err("This panel does not support HBM mode off.\n");
-			goto error;
-		} else {
-		HBM_flag = false;
-		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_HBM_OFF);
-		pr_err("hbm_backight = %d panel->bl_config.bl_level =%d\n",
-		panel->hbm_backlight, panel->bl_config.bl_level);
-		rc = dsi_panel_update_backlight(panel, panel->hbm_backlight);
-		}
-		break;
-
-	case 1:
-		count = mode->priv_info->cmd_sets[DSI_CMD_SET_HBM_ON].count;
-		if (!count) {
-			pr_err("This panel does not support HBM mode.\n");
-			goto error;
-		} else {
-			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_HBM_ON);
-		}
-		break;
-
-	case 2:
-		count = mode->priv_info->cmd_sets[DSI_CMD_SET_HBM_ON_2].count;
-		if (!count) {
-			pr_err("This panel does not support HBM mode 2.\n");
-			goto error;
-		} else {
-			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_HBM_ON_2);
-		}
-		break;
-
-	case 3:
-		count = mode->priv_info->cmd_sets[DSI_CMD_SET_HBM_ON_3].count;
-		if (!count) {
-			pr_err("This panel does not support HBM mode 3.\n");
-			goto error;
-		} else {
-			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_HBM_ON_3);
-		}
-		break;
-
-	case 4:
-		count = mode->priv_info->cmd_sets[DSI_CMD_SET_HBM_ON_4].count;
-		if (!count) {
-			pr_err("This panel does not support HBM mode 4.\n");
-			goto error;
-		} else {
-			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_HBM_ON_4);
-		}
-		break;
-
-	case 5:
-		count = mode->priv_info->cmd_sets[DSI_CMD_SET_HBM_ON_5].count;
-		if (!count) {
-			pr_err("This panel does not support HBM mode 5.\n");
-			goto error;
-		} else {
-			HBM_flag = true;
-			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_HBM_ON_5);
-		}
-		break;
-	default:
-		break;
-
-	}
-	pr_debug("Set HBM Mode = %d\n", level);
-
-error:
-	mutex_unlock(&panel->panel_lock);
-
-	return rc;
-}
-int dsi_panel_op_set_hbm_mode(struct dsi_panel *panel, int level)
-{
-	int rc = 0;
-	u32 count;
-	struct dsi_display_mode *mode;
-
-	if (!panel || !panel->cur_mode) {
-		pr_err("Invalid params\n");
-		return -EINVAL;
-	}
-
-	mutex_lock(&panel->panel_lock);
-
-	mode = panel->cur_mode;
-	switch (level) {
-	case 0:
-		count = mode->priv_info->cmd_sets[DSI_CMD_SET_HBM_OFF].count;
-		if (!count) {
-			pr_err("This panel does not support HBM mode off.\n");
-			goto error;
-		} else {
-			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_HBM_OFF);
-			pr_err("HBM OFF->hbm_backight = %d"
-					"panel->bl_config.bl_level = %d\n",
-					panel->hbm_backlight,
-					panel->bl_config.bl_level);
-			rc = dsi_panel_update_backlight(panel,
-				panel->hbm_backlight);
-		}
-		break;
-
-	case 1:
-		count = mode->priv_info->cmd_sets[DSI_CMD_SET_HBM_ON_5].count;
-		if (!count) {
-			pr_err("This panel does not support HBM mode.\n");
-			goto error;
-		} else {
-			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_HBM_ON_5);
-		}
-		break;
-	default:
-		break;
-
-	}
-	pr_err("Set HBM Mode = %d\n", level);
-	if (level == 5)
-		pr_err("HBM == 5 for fingerprint\n");
-
-error:
-	mutex_unlock(&panel->panel_lock);
-
-	return rc;
-}
-
 
 int dsi_panel_set_aod_mode(struct dsi_panel *panel, int level)
 {

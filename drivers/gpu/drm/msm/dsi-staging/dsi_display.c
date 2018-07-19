@@ -4987,12 +4987,70 @@ static ssize_t sysfs_dynamic_dsi_clk_write(struct device *dev,
 
 }
 
+static ssize_t sysfs_hbm_read(struct device *dev,
+	struct device_attribute *attr, char *buf)
+{
+	struct dsi_display *display = dev_get_drvdata(dev);
+	if (!display->panel)
+		return 0;
+
+	return scnprintf(buf, PAGE_SIZE, "%d\n", display->panel->hbm_mode);
+}
+
+static ssize_t sysfs_hbm_write(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct dsi_display *display = dev_get_drvdata(dev);
+	int ret, hbm_mode;
+
+	if (!display->panel)
+		return -EINVAL;
+
+	ret = kstrtoint(buf, 10, &hbm_mode);
+	if (ret) {
+		pr_err("kstrtoint failed. ret=%d\n", ret);
+		return ret;
+	}
+
+	mutex_lock(&display->display_lock);
+
+	display->panel->hbm_mode = hbm_mode;
+	if (!dsi_panel_initialized(display->panel)) {
+		goto error;
+	}
+
+	ret = dsi_display_clk_ctrl(display->dsi_clk_handle,
+		DSI_CORE_CLK, DSI_CLK_ON);
+	if (ret) {
+		pr_err("[%s] failed to enable DSI core clocks, rc=%d\n",
+			display->name, ret);
+		goto error;
+	}
+
+	ret = dsi_panel_apply_hbm_mode(display->panel);
+	if (ret)
+		pr_err("unable to set hbm mode\n");
+
+	ret = dsi_display_clk_ctrl(display->dsi_clk_handle,
+		DSI_CORE_CLK, DSI_CLK_OFF);
+	if (ret) {
+		pr_err("[%s] failed to disable DSI core clocks, rc=%d\n",
+			display->name, ret);
+		goto error;
+    }
+error:
+	mutex_unlock(&display->display_lock);
+	return ret == 0 ? count : ret;
+}
+
 static DEVICE_ATTR(dynamic_dsi_clock, 0644,
 			sysfs_dynamic_dsi_clk_read,
 			sysfs_dynamic_dsi_clk_write);
+static DEVICE_ATTR(hbm, 0644, sysfs_hbm_read, sysfs_hbm_write);
 
 static struct attribute *dynamic_dsi_clock_fs_attrs[] = {
 	&dev_attr_dynamic_dsi_clock.attr,
+	&dev_attr_hbm.attr,
 	NULL,
 };
 static struct attribute_group dynamic_dsi_clock_fs_attrs_group = {
@@ -7231,6 +7289,11 @@ int dsi_display_set_hbm_mode(struct drm_connector *connector, int level)
 	if ((dsi_display == NULL) || (dsi_display->panel == NULL))
 		return -EINVAL;
 
+	if (level == 7) {
+		// For some reason, OnePlus' user space treats 0 and 7 the same
+		level = 0;
+	}
+
 	panel = dsi_display->panel;
 	mutex_lock(&dsi_display->display_lock);
 
@@ -7246,9 +7309,14 @@ int dsi_display_set_hbm_mode(struct drm_connector *connector, int level)
 		goto error;
 	}
 
-	rc = dsi_panel_set_hbm_mode(panel, level);
+	rc = dsi_panel_apply_hbm_mode(panel);
 	if (rc)
 		pr_err("unable to set hbm mode\n");
+
+	if (level == 0) {
+		printk(KERN_ERR "When HBM OFF -->hbm_backight = %d panel->bl_config.bl_level =%d\n", panel->hbm_backlight, panel->bl_config.bl_level);
+		dsi_panel_update_backlight(panel,panel->hbm_backlight);
+	}
 
 	rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
 			DSI_CORE_CLK, DSI_CLK_OFF);
@@ -7303,6 +7371,7 @@ int dsi_display_set_fp_hbm_mode(struct drm_connector *connector, int level)
 
 	mutex_lock(&dsi_display->display_lock);
 
+	panel->hbm_mode = level > 0 ? 5 : 0;
 	panel->op_force_screenfp = level;
 	oneplus_force_screenfp = panel->op_force_screenfp;
 	if (!dsi_panel_initialized(panel))
@@ -7316,9 +7385,14 @@ int dsi_display_set_fp_hbm_mode(struct drm_connector *connector, int level)
 		goto error;
 	}
 
-	rc = dsi_panel_op_set_hbm_mode(panel, level);
+	rc = dsi_panel_apply_hbm_mode(panel);
 	if (rc)
 		pr_err("unable to set hbm mode\n");
+
+	if (level == 0) {
+		printk(KERN_ERR "When HBM OFF -->hbm_backight = %d panel->bl_config.bl_level =%d\n", panel->hbm_backlight, panel->bl_config.bl_level);
+		dsi_panel_update_backlight(panel,panel->hbm_backlight);
+	}
 
 	rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
 			DSI_CORE_CLK, DSI_CLK_OFF);
