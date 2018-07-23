@@ -4484,7 +4484,8 @@ void show_free_areas(unsigned int filter)
 		" mapped:%lu shmem:%lu pagetables:%lu bounce:%lu\n"
 /* bin.zhong@ASTI add for CONFIG_SMART_BOOST */
 		" ramboost:%lu\n"
-		" free:%lu free_pcp:%lu free_cma:%lu\n",
+		" free:%lu free_pcp:%lu free_cma:%lu zspages: %lu\n"
+		" ion_heap:%lu ion_heap_pool:%lu\n",
 		global_node_page_state(NR_ACTIVE_ANON),
 		global_node_page_state(NR_INACTIVE_ANON),
 		global_node_page_state(NR_ISOLATED_ANON),
@@ -4505,7 +4506,15 @@ void show_free_areas(unsigned int filter)
 		UID_LRU_SIZE,
 		global_page_state(NR_FREE_PAGES),
 		free_pcp,
-		global_page_state(NR_FREE_CMA_PAGES));
+		global_page_state(NR_FREE_CMA_PAGES),
+#if IS_ENABLED(CONFIG_ZSMALLOC)
+		global_page_state(NR_ZSPAGES),
+#else
+		0UL,
+#endif
+		global_node_page_state(NR_ION_HEAP),
+		global_node_page_state(NR_INDIRECTLY_RECLAIMABLE_BYTES)
+							>> PAGE_SHIFT);
 
 	for_each_online_pgdat(pgdat) {
 		printk("Node %d"
