@@ -199,8 +199,6 @@ struct pon_regulator {
 	bool			enabled;
 };
 
-	struct delayed_work     press_work;
-
 static int pon_ship_mode_en;
 module_param_named(
 	ship_mode_en, pon_ship_mode_en, int, 0600
