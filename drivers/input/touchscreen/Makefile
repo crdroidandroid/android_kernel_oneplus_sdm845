@@ -105,8 +105,11 @@ obj-$(CONFIG_TOUCHSCREEN_ROHM_BU21023)	+= rohm_bu21023.o
 obj-$(CONFIG_TOUCHSCREEN_FTS)		+= focaltech_touch/
 obj-$(CONFIG_TOUCHSCREEN_GT9XX_v28)		+= gt9xx_v2.8/
 obj-$(CONFIG_TOUCHSCREEN_HIMAX_CHIPSET)	+= hxchipset/
-obj-$(CONFIG_TOUCHSCREEN_EKTF3XXX_CHIPSET) += ektf3xxx/
-obj-$(CONFIG_TOUCHSCREEN_RAYDIUM_CHIPSET)  += raydium_wt030/
+obj-$(CONFIG_TOUCHSCREEN_EKTF3XXX_CHIPSET)	+= ektf3xxx/
+obj-$(CONFIG_TOUCHSCREEN_RAYDIUM_CHIPSET)	+= raydium_wt030/
+obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_S3320_I2C_RMI)	+= synaptics_driver_s3320.o
+obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_S3320_I2C_RMI)	+= synaptics_s3320_redremote.o
+obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_S3320_I2C_RMI)	+= synaptics_dsx_fw_update.o
 
 subdir-ccflags-y += \
 	-Wno-unused-function \
