@@ -2034,13 +2034,11 @@ static int max98927_i2c_probe(struct i2c_client *i2c,
 	unsigned int presence = 0;
 	struct device_node *np = i2c->dev.of_node;
 
-    pr_err("****** %s id.name =%s id.driver_data= %d \n",__func__,id->name,(int)(id->driver_data));
+	pr_err("****** %s id.name =%s id.driver_data= %d \n",__func__,id->name,(int)(id->driver_data));
 
 //su
-    if(np!=NULL && (id->driver_data == 0))
-        max_codec_np =np;
-
-
+	if (np && !id->driver_data)
+		max_codec_np = np;
 
 	if (!max98927) {
 		max98927 = devm_kzalloc(&i2c->dev,
