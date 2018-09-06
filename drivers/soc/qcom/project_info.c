@@ -277,10 +277,10 @@ static ssize_t component_info_get(struct device *dev,
         return snprintf(buf, BUF_SIZE, "VER:\t%s\nMANU:\t%s\n",
         get_component_version(SECOND_R_CAMERA),
         get_component_manufacture(SECOND_R_CAMERA));
-	if (attr == &dev_attr_ois)
-		return snprintf(buf, BUF_SIZE, "VER:\t%s\nMANU:\t%s\n",
-		get_component_version(OIS),
-		get_component_manufacture(OIS));
+    if (attr == &dev_attr_ois)
+	return snprintf(buf, BUF_SIZE, "VER:\t%s\nMANU:\t%s\n",
+	get_component_version(OIS),
+	get_component_manufacture(OIS));
     if (attr == &dev_attr_tp)
         return snprintf(buf, BUF_SIZE, "VER:\t%s\nMANU:\t%s\n",
         get_component_version(TP),
