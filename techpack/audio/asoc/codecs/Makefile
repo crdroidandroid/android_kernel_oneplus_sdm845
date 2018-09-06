@@ -41,11 +41,6 @@ obj-$(CONFIG_SND_SOC_MSM_HDMI_CODEC_RX) += msm_hdmi_codec_rx.o
 
 obj-$(CONFIG_SND_SOC_MAX98927) += max/max98927.o
 
-tfa9874-objs := tfa9874/tfa98xx.o \
-		tfa9874/tfa_container.o \
-		tfa9874/tfa_dsp.o \
-		tfa9874/tfa_init.o
-
-obj-$(CONFIG_SND_SOC_TFA9874) += tfa9874.o
+obj-$(CONFIG_SND_SOC_TFA9874) += tfa9874/
 
 obj-$(CONFIG_SND_SOC_FSA4840) += fsa4840/fsa4840.o
