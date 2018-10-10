@@ -107,3 +107,9 @@ SCHED_FEAT(ENERGY_AWARE, false)
  */
 SCHED_FEAT(SCHEDTUNE_BOOST_UTIL, false)
 SCHED_FEAT(HISI_FILTER, true)
+
+/*
+ * Use the Simplified Energy Model for EAS accounting only for
+ * active costs of CPUs.
+ */
+SCHED_FEAT(EAS_SIMPLIFIED_EM, true)
