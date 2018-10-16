@@ -1020,13 +1020,12 @@ TRACE_EVENT(sched_load_balance_nohz_kick,
 	TP_fast_assign(
 		__entry->cpu			= cpu;
 		__entry->cpu_nr			= cpu_rq(cpu)->nr_running;
-		__entry->cpu_overutil		= cpu_overutilized(cpu);
 		__entry->kick_cpu		= kick_cpu;
 		__entry->nohz_flags		= *nohz_flags(kick_cpu);
 	),
 
-	TP_printk("cpu=%d nr_run=%u overutilized=%d kick_cpu=%d nohz_flags=0x%lx",
-			__entry->cpu, __entry->cpu_nr, __entry->cpu_overutil,
+	TP_printk("cpu=%d nr_run=%u kick_cpu=%d nohz_flags=0x%lx",
+			__entry->cpu, __entry->cpu_nr,
 			__entry->kick_cpu, __entry->nohz_flags)
 
 );
