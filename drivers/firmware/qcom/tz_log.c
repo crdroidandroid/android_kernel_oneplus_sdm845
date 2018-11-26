@@ -1245,10 +1245,6 @@ static int tz_log_probe(struct platform_device *pdev)
 		tzdbg.diag_buf = NULL;
 	}
 
-//WayneChang, 2016/10/28, add procfs for qsee_log due to oemlogkit cannot access debugfs in android N
-	if (tzprocfs_init(pdev))
-		goto err;
-
 	tzdbg_register_qsee_log_buf();
 
 	tzdbg_get_tz_version();
