@@ -214,4 +214,6 @@ source "drivers/tee/Kconfig"
 
 source "drivers/oneplus/Kconfig"
 
+source "drivers/dts_eagle/Kconfig"
+
 endmenu
