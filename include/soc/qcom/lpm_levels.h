@@ -1,4 +1,4 @@
-/* Copyright (c) 2018, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2018-2020 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -21,4 +21,5 @@ struct system_pm_ops {
 };
 
 uint32_t register_system_pm_ops(struct system_pm_ops *pm_ops);
+void update_ipi_history(int cpu);
 #endif
