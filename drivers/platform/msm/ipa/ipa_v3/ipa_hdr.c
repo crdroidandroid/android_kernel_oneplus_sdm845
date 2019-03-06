@@ -1,4 +1,5 @@
 /* Copyright (c) 2012-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -97,7 +98,8 @@ static int ipa3_hdr_proc_ctx_to_hw_format(struct ipa_mem_buffer *mem,
 				hdr_base_addr,
 				entry->hdr->offset_entry,
 				&entry->l2tp_params,
-				&entry->generic_params);
+				&entry->generic_params,
+				ipa3_ctx->use_64_bit_dma_mask);
 		if (ret)
 			return ret;
 	}
