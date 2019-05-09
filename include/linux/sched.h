@@ -518,6 +518,7 @@ asmlinkage void schedule(void);
 extern void schedule_preempt_disabled(void);
 
 extern long io_schedule_timeout(long timeout);
+extern int set_task_boost(int boost, u64 period);
 
 static inline void io_schedule(void)
 {
@@ -1754,6 +1755,9 @@ struct task_struct {
 	struct sched_entity se;
 	struct sched_rt_entity rt;
 	u64 last_sleep_ts;
+	int boost;
+	u64 boost_period;
+        u64 boost_expires;
 #ifdef CONFIG_SCHED_WALT
 	struct ravg ravg;
 	/*
