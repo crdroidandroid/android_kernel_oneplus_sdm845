@@ -1956,6 +1956,7 @@ static struct platform_driver msm_platform_driver = {
 		.pm     = &msm_pm_ops,
 		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
 		.suppress_bind_attrs = true,
+		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
 	},
 };
 
