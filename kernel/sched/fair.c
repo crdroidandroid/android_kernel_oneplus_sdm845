@@ -7122,7 +7122,7 @@ retry:
 							prefer_idle, min_util,
 							cpu, best_idle_cpu,
 							best_active_cpu,
-							i, -1);
+							i, -1, boosted);
 
 					return i;
 				}
@@ -7371,7 +7371,7 @@ retry:
 
 	trace_sched_find_best_target(p, prefer_idle, min_util, cpu,
 				     best_idle_cpu, best_active_cpu,
-				     target_cpu, *backup_cpu);
+				     target_cpu, *backup_cpu, boosted);
 
 	schedstat_inc(p->se.statistics.nr_wakeups_fbt_count);
 	schedstat_inc(this_rq()->eas_stats.fbt_count);
@@ -7655,7 +7655,8 @@ unlock:
 	trace_sched_task_util(p, next_cpu, backup_cpu, target_cpu,
 			      fbt_env.need_idle, fastpath,
 			      fbt_env.placement_boost, rtg_target ?
-			      cpumask_first(rtg_target) : -1, start_t);
+			      cpumask_first(rtg_target) : -1, start_t,
+			      boosted, sync_boost);
 	return target_cpu;
 }
 
