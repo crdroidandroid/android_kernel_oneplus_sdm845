@@ -179,6 +179,7 @@ unsigned int sysctl_sched_cfs_bandwidth_slice		= 5000UL;
  * (default: ~20%)
  */
 unsigned int capacity_margin				= 1280;
+unsigned int sysctl_sched_capacity_margin 		= 1078; /* ~5% margin */
 unsigned int sysctl_sched_capacity_margin_down 		= 1205; /* ~15% margin */
 
 #ifdef CONFIG_SCHED_WALT
@@ -7142,7 +7143,7 @@ static unsigned long cpu_estimated_capacity(int cpu, struct task_struct *p)
 #else
 static unsigned long cpu_estimated_capacity(int cpu, struct task_struct *p)
 {
-	return cpu_util_wake(cpu, p);
+	return cpu_util_without(cpu, p);
 }
 #endif
 
@@ -7321,7 +7322,6 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 				most_spare_cap_cpu = i;
 			}
 
-#ifdef CONFIG_SCHED_WALT
 			/*
 			 * Cumulative demand may already be accounting for the
 			 * task. If so, add just the boost-utilization to
@@ -7332,9 +7332,7 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 					       min_util - task_util(p);
 			else
 				new_util_cuml = cpu_util_cum(i, 0) + min_util;
-#else
-			new_util_cuml = cpu_util_cum(i, 0) + min_util;
-#endif
+
 			/*
 			 * Ensure minimum capacity to grant the required boost.
 			 * The target CPU can be already at a capacity level higher
