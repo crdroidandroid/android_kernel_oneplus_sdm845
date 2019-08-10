@@ -107,4 +107,11 @@ SCHED_FEAT(FBT_STRICT_ORDER, false)
  * ON: schedtune.prefer_idle is replaced with need_idle
  * OFF: schedtune.prefer_idle is honored as is.
  */
-SCHED_FEAT(EAS_USE_NEED_IDLE, false)
+SCHED_FEAT(EAS_USE_NEED_IDLE, true)
+
+/*
+ * Inflate the effective utilization of SchedTune-boosted tasks, which
+ * generally leads to usage of higher frequencies.
+ * If disabled, boosts will only bias tasks to higher-capacity CPUs.
+ */
+SCHED_FEAT(SCHEDTUNE_BOOST_UTIL, true)
