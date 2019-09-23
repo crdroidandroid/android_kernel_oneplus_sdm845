@@ -7885,6 +7885,7 @@ static int select_energy_cpu_brute(struct task_struct *p, int prev_cpu,
 	u64 start_t = 0;
 
 	fbt_env.fastpath = 0;
+	fbt_env.need_idle = 0;
 
 	if (trace_sched_task_util_enabled())
 		start_t = sched_clock();
