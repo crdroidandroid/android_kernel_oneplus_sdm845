@@ -2416,12 +2416,6 @@ static int msm_geni_serial_get_ver_info(struct uart_port *uport)
 		goto exit_ver_info;
 	}
 
-	msm_port->ver_info.m_fw_ver = get_se_m_fw(uport->membase);
-	msm_port->ver_info.s_fw_ver = get_se_s_fw(uport->membase);
-	IPC_LOG_MSG(msm_port->ipc_log_misc, "%s: FW Ver:0x%x%x\n",
-		__func__,
-		msm_port->ver_info.m_fw_ver, msm_port->ver_info.s_fw_ver);
-
 	hw_ver = geni_se_qupv3_hw_version(msm_port->wrapper_dev,
 		&msm_port->ver_info.hw_major_ver,
 		&msm_port->ver_info.hw_minor_ver,
