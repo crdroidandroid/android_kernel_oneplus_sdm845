@@ -728,10 +728,7 @@ static ssize_t writeback_store(struct device *dev,
 			continue;
 		}
 
-		bio_init(&bio);
-
-		bio.bi_max_vecs = 1;
-		bio.bi_io_vec = &bvec;
+		bio_init(&bio, &bvec, 1);
 		bio.bi_bdev = zram->bdev;
 
 		bio.bi_iter.bi_sector = blk_idx * (PAGE_SIZE >> 9);
