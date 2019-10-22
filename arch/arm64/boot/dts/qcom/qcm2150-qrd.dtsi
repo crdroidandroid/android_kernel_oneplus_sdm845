@@ -11,12 +11,8 @@
  * GNU General Public License for more details.
  */
 
-/dts-v1/;
-/plugin/;
-
-#include "sdm429-qrd-spyro-evt.dtsi"
+#include "qm215-qrd.dtsi"
 
 / {
-	model = "Qualcomm Technologies, Inc. SDM429 QRD Spyro Overlay";
-	qcom,board-id = <0xb 6>;
+	model = "Qualcomm Technologies, Inc. QCM2150 QRD";
 };

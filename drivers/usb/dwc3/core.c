@@ -1287,6 +1287,8 @@ static int dwc3_probe(struct platform_device *pdev)
 /*yangfb@bsp,20180228,enable usb3.1*/
 	dwc->enable_super_speed = device_property_read_bool(dev,
 					"op,enable_super_speed");
+	dwc->normal_eps_in_gsi_mode = device_property_read_bool(dev,
+					"normal-eps-in-gsi-mode");
 	if (dwc->enable_bus_suspend) {
 		pm_runtime_set_autosuspend_delay(dev, 500);
 		pm_runtime_use_autosuspend(dev);
