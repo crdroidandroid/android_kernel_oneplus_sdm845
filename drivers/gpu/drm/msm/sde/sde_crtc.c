@@ -4160,6 +4160,7 @@ void sde_crtc_commit_kickoff(struct drm_crtc *crtc,
 	bool is_error, reset_req;
 	unsigned long flags;
 	enum sde_crtc_idle_pc_state idle_pc_state;
+	unsigned long flags;
 
 	if (!crtc) {
 		SDE_ERROR("invalid argument\n");
