@@ -1786,7 +1786,7 @@ static ssize_t cpuset_write_resmask_wrapper(struct kernfs_open_file *of,
 		/* Silver only cpusets go first */
 		{ "background",			"0-1"},
 		{ "audio-app",			"0-3"},
-		{ "system-background", 		"0-3"},
+		{ "system-background", 		"0-2"},
 		{ "restricted",			"0-3"},
 		{ "top-app",			"0-7"},
 		{ "foreground",			"0-3,6-7"},
