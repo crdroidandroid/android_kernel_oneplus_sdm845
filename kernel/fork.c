@@ -81,8 +81,6 @@
 #include <linux/cpu_input_boost.h>
 #include <linux/devfreq_boost.h>
 
-#include <linux/adj_chain.h>
-
 #include <asm/pgtable.h>
 #include <asm/pgalloc.h>
 #include <asm/uaccess.h>
@@ -362,10 +360,6 @@ void free_task(struct task_struct *tsk)
 	 */
 	WARN_ON_ONCE(atomic_read(&tsk->stack_refcount) != 0);
 #endif
-	if (tsk->nn) {
-		kfree(tsk->nn->nf);
-		kfree(tsk->nn);
-	}
 	rt_mutex_debug_task_free(tsk);
 	ftrace_graph_exit_task(tsk);
 	put_seccomp_filter(tsk);
@@ -555,15 +549,6 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
 	tsk->splice_pipe = NULL;
 	tsk->task_frag.page = NULL;
 	tsk->wake_q.next = NULL;
-#ifdef CONFIG_OPCHAIN
-	tsk->utask_tag = 0;
-	tsk->utask_tag_base = 0;
-	tsk->etask_claim = 0;
-	tsk->claim_cpu = -1;
-	tsk->utask_slave = 0;
-	/*Curtis, 20180425, non-exist dcache*/
-	tsk->nn = NULL;
-#endif
 
 	account_kernel_stack(tsk, 1);
 
@@ -1410,10 +1395,6 @@ static int copy_signal(unsigned long clone_flags, struct task_struct *tsk)
 	sig->has_child_subreaper = current->signal->has_child_subreaper ||
 				   current->signal->is_child_subreaper;
 
-	/* CONFIG_MEMPLUS add start by bin.zhong@ASTI */
-	memplus_init_task_reclaim_stat(sig);
-	/* add end */
-
 	mutex_init(&sig->cred_guard_mutex);
 
 	return 0;
@@ -1508,7 +1489,6 @@ static __latent_entropy struct task_struct *copy_process(
 {
 	int retval;
 	struct task_struct *p;
-	struct nedf_node *nn = NULL;
 
 	if ((clone_flags & (CLONE_NEWNS|CLONE_FS)) == (CLONE_NEWNS|CLONE_FS))
 		return ERR_PTR(-EINVAL);
@@ -1867,7 +1847,6 @@ static __latent_entropy struct task_struct *copy_process(
 	if (likely(p->pid)) {
 		ptrace_init_task(p, (clone_flags & CLONE_PTRACE) || trace);
 
-		adj_chain_init_list(p);
 		init_task_pid(p, PIDTYPE_PID, pid);
 		if (thread_group_leader(p)) {
 			init_task_pid(p, PIDTYPE_PGID, task_pgrp(current));
@@ -1882,14 +1861,9 @@ static __latent_entropy struct task_struct *copy_process(
 			p->signal->tty = tty_kref_get(current->signal->tty);
 			list_add_tail(&p->sibling, &p->real_parent->children);
 			list_add_tail_rcu(&p->tasks, &init_task.tasks);
-			adj_chain_attach(p);
 			attach_pid(p, PIDTYPE_PGID);
 			attach_pid(p, PIDTYPE_SID);
 			__this_cpu_inc(process_counts);
-			/*Ted, 20180425, non-exist dcache*/
-			if (!(p->flags & PF_KTHREAD))
-				nn =
-				kmalloc(sizeof(struct nedf_node), __GFP_NOWARN);
 		} else {
 			current->signal->nr_threads++;
 			atomic_inc(&current->signal->live);
@@ -1915,18 +1889,6 @@ static __latent_entropy struct task_struct *copy_process(
 
 	trace_task_newtask(p, clone_flags);
 	uprobe_copy_process(p, clone_flags);
-	if (nn) {
-		p->nn = nn;
-		nn->nf =
-		kmalloc(sizeof(struct nedf) * FILE_MAP_NUM, __GFP_NOWARN);
-		nn->nf_cnt = 0;
-		nn->nf_index = 0;
-		nn->nf_tag = 0;
-		if (nn->nf)
-			nn->is_valid = true;
-		else
-			nn->is_valid = false;
-	}
 
 	return p;
 
@@ -2059,9 +2021,6 @@ long _do_fork(unsigned long clone_flags,
 		cpufreq_task_times_alloc(p);
 
 		trace_sched_process_fork(current, p);
-
-		/* bin.zhong@ASTI add for CONFIG_SMART_BOOST */
-		SMB_HOT_COUNT_INIT((clone_flags & CLONE_VM), p);
 
 		pid = get_task_pid(p, PIDTYPE_PID);
 		nr = pid_vnr(pid);
