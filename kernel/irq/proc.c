@@ -436,9 +436,9 @@ void register_irq_proc(unsigned int irq, struct irq_desc *desc)
 			 &irq_node_proc_fops, (void *)(long)irq);
 # ifdef CONFIG_GENERIC_IRQ_EFFECTIVE_AFF_MASK
 	proc_create_data("effective_affinity", 0444, desc->dir,
-			 &irq_effective_aff_proc_fops, (void *)(long)irq));
+			 &irq_effective_aff_proc_fops, (void *)(long)irq);
 	proc_create_data("effective_affinity_list", 0444, desc->dir,
-			 &irq_effective_aff_list_proc_fops, (void *)(long)irq));
+			 &irq_effective_aff_list_proc_fops, (void *)(long)irq);
 # endif
 #endif
 
