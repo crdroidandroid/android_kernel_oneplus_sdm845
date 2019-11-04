@@ -387,8 +387,6 @@ static int cpu_boost_init(void)
 			s->input_boost_freq = CONFIG_INPUT_BOOST_FREQ_LP;
 		if (cpu == 4)
 			s->input_boost_freq = CONFIG_INPUT_BOOST_FREQ_PERF;
-		if (cpu == 7)
-			s->input_boost_freq = CONFIG_INPUT_BOOST_FREQ_PRIME;
 	}
 	cpufreq_register_notifier(&boost_adjust_nb, CPUFREQ_POLICY_NOTIFIER);
 
