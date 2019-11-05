@@ -2889,7 +2889,7 @@ ssize_t oneplus_display_notify_fp_press(struct device *dev,
 	crtc_state = drm_atomic_get_crtc_state(state, crtc);
 	priv = drm_dev->dev_private;
 	now = ktime_get();
-	need_commit = (((now.tv64 - priv->commit_end_time.tv64) > 20000000 ?
+	need_commit = (((now - priv->commit_end_time) > 20000000 ?
 			true : false) && display->panel->aod_status == 0);
 
 	if (need_commit) {
