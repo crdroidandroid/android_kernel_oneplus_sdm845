@@ -3779,7 +3779,7 @@ static inline void f2fs_find_node_path(struct inode *tmp_inode)
 		kfree(new);
 		temp_p = temp_p->d_parent;
 	}
-		f2fs_warn(F2FS_I_SB(tmp_inode)->sb,
+		f2fs_warn(F2FS_I_SB(tmp_inode),
 			"[F2FS_debug]path %s", temp);
 		kfree(temp);
 }
