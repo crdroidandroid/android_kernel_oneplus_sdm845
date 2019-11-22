@@ -2074,6 +2074,7 @@ TRACE_EVENT(sched_preempt_disable,
 				__entry->caddr2, __entry->caddr3)
 );
 
+#ifdef CONFIG_SCHED_WALT
 TRACE_EVENT(sched_load_balance_skip_tasks,
 
 	TP_PROTO(int scpu, int dcpu, int pid, unsigned long h_load, unsigned long task_util, unsigned long affinity, unsigned int env_flags),
@@ -2106,7 +2107,8 @@ TRACE_EVENT(sched_load_balance_skip_tasks,
 
 	TP_printk("source_cpu=%d util_cum=%lu dest_cpu=%d util_cum=%lu pid=%d affinity=%#lx task_util=%lu task_h_load=%lu flags=%#x",
 		__entry->scpu, __entry->src_util_cum, __entry->dcpu, __entry->dst_util_cum, __entry->pid, __entry->affinity, __entry->task_util, __entry->h_load, __entry->env_flags)
-); 
+);
+#endif
 
 #endif /* _TRACE_SCHED_H */
 

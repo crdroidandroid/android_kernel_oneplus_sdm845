@@ -5821,6 +5821,10 @@ static unsigned long cpu_util_wake(int cpu, struct task_struct *p)
 {
 	unsigned int util;
 
+#ifndef CONFIG_SCHED_WALT
+	struct cfs_rq *cfs_rq;
+#endif
+
 #ifdef CONFIG_SCHED_WALT
 	/*
 	 * WALT does not decay idle tasks in the same manner
@@ -5840,7 +5844,6 @@ static unsigned long cpu_util_wake(int cpu, struct task_struct *p)
 #ifdef CONFIG_SCHED_WALT
 	util = max_t(long, cpu_util(cpu) - task_util(p), 0);
 #else
-	struct cfs_rq *cfs_rq;
 
 	cfs_rq = &cpu_rq(cpu)->cfs;
 	util = READ_ONCE(cfs_rq->avg.util_avg);
@@ -7260,6 +7263,7 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 				most_spare_cap_cpu = i;
 			}
 
+#ifdef CONFIG_SCHED_WALT
 			/*
 			 * Cumulative demand may already be accounting for the
 			 * task. If so, add just the boost-utilization to
@@ -7270,7 +7274,9 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 					       min_util - task_util(p);
 			else
 				new_util_cuml = cpu_util_cum(i, 0) + min_util;
-
+#else
+			new_util_cuml = cpu_util_cum(i, 0) + min_util;
+#endif
 			/*
 			 * Ensure minimum capacity to grant the required boost.
 			 * The target CPU can be already at a capacity level higher
@@ -7526,8 +7532,8 @@ static inline int find_best_target(struct task_struct *p, int *backup_cpu,
 		schedstat_inc(this_rq()->eas_stats.fbt_pref_idle);
 
 		trace_sched_find_best_target(p, prefer_idle, min_util, cpu,
-					     best_idle_cpu, best_active_cpu,
-					     best_idle_cpu, -1);
+					     best_idle_cpu, best_active_cpu, -1,
+					     best_idle_cpu, -1, boosted);
 		return best_idle_cpu;
 	}
 
@@ -8888,9 +8894,11 @@ redo:
 
 		continue;
 next:
+#ifdef CONFIG_SCHED_WALT
 		trace_sched_load_balance_skip_tasks(env->src_cpu, env->dst_cpu,
 				p->pid, load, task_util(p),
 				cpumask_bits(&p->cpus_allowed)[0], env->flags );
+#endif
 		list_move_tail(&p->se.group_node, tasks);
 	}
 
@@ -9745,12 +9753,14 @@ next_group:
 		sds->total_load += sgs->group_load;
 		sds->total_capacity += sgs->group_capacity;
 
+#ifdef CONFIG_SCHED_WALT
 		trace_sched_load_balance_sg_stats(sg->cpumask[0], sgs->group_type,
 					sgs->idle_cpus, sgs->sum_nr_running,
 					sgs->group_load, sgs->group_capacity,
 					sgs->group_util, sgs->group_no_capacity,
 					sgs->load_per_task,
 					sds->busiest ? sds->busiest->cpumask[0] : 0);
+#endif
 
 		sg = sg->next;
 	} while (sg != env->sd->groups);
@@ -10154,11 +10164,13 @@ force_balance:
 	env->busiest_group_type = busiest->group_type;
 	/* Looks like there is an imbalance. Compute it */
 	calculate_imbalance(env, &sds);
+#ifdef CONFIG_SCHED_WALT
 	trace_sched_load_balance_stats(sds.busiest->cpumask[0], busiest->group_type,
 				busiest->avg_load, busiest->load_per_task,
 				sds.local->cpumask[0], local->group_type,
 				local->avg_load, local->load_per_task,
 				sds.avg_load, env->imbalance);
+#endif
 	return sds.busiest;
 
 out_balanced:
@@ -11077,7 +11089,9 @@ static void nohz_balancer_kick(bool only_update)
 	 * is idle. And the softirq performing nohz idle load balance
 	 * will be run before returning from the IPI.
 	 */
+#ifdef CONFIG_SCHED_WALT
 	trace_sched_load_balance_nohz_kick(smp_processor_id(), ilb_cpu);
+#endif
 	smp_send_reschedule(ilb_cpu);
 	return;
 }
