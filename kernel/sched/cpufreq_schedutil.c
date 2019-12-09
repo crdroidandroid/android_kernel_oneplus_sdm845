@@ -86,6 +86,26 @@ static bool sugov_should_update_freq(struct sugov_policy *sg_policy, u64 time)
 {
 	s64 delta_ns;
 
+	/*
+	 * Since cpufreq_update_util() is called with rq->lock held for
+	 * the @target_cpu, our per-cpu data is fully serialized.
+	 *
+	 * However, drivers cannot in general deal with cross-cpu
+	 * requests, so while get_next_freq() will work, our
+	 * sugov_update_commit() call may not for the fast switching platforms.
+	 *
+	 * Hence stop here for remote requests if they aren't supported
+	 * by the hardware, as calculating the frequency is pointless if
+	 * we cannot in fact act on it.
+	 *
+	 * For the slow switching platforms, the kthread is always scheduled on
+	 * the right set of CPUs and any CPU can find the next frequency and
+	 * schedule the kthread.
+	 */
+	if (sg_policy->policy->fast_switch_enabled &&
+	    !cpufreq_can_do_remote_dvfs(sg_policy->policy))
+		return false;
+
 	if (unlikely(sg_policy->need_freq_update))
 		return true;
 
@@ -117,6 +137,15 @@ static bool sugov_up_down_rate_limit(struct sugov_policy *sg_policy, u64 time,
 	return false;
 }
 
+static inline bool use_pelt(void)
+{
+#ifdef CONFIG_SCHED_WALT
+	return (!sysctl_sched_use_walt_cpu_util || walt_disabled);
+#else
+	return true;
+#endif
+}
+
 static void sugov_update_commit(struct sugov_policy *sg_policy, u64 time,
 				unsigned int next_freq)
 {
@@ -145,7 +174,9 @@ static void sugov_update_commit(struct sugov_policy *sg_policy, u64 time,
 		policy->cur = next_freq;
 		trace_cpu_frequency(next_freq, smp_processor_id());
 	} else {
-		sg_policy->work_in_progress = true;
+		if (use_pelt())
+			sg_policy->work_in_progress = true;
+			
 		sched_irq_work_queue(&sg_policy->irq_work);
 	}
 }
@@ -299,7 +330,7 @@ static void sugov_update_single(struct update_util_data *hook, u64 time,
 	if (!sugov_should_update_freq(sg_policy, time))
 		return;
 
-	busy = sugov_cpu_is_busy(sg_cpu);
+	busy = use_pelt() && sugov_cpu_is_busy(sg_cpu);
 
 	if (flags & SCHED_CPUFREQ_RT_DL) {
 		/* clear cache when it's bypassed */
@@ -416,7 +447,8 @@ static void sugov_work(struct kthread_work *work)
 				CPUFREQ_RELATION_L);
 	mutex_unlock(&sg_policy->work_lock);
 
-	sg_policy->work_in_progress = false;
+	if (use_pelt())
+		sg_policy->work_in_progress = false;
 }
 
 static void sugov_irq_work(struct irq_work *irq_work)
@@ -604,7 +636,11 @@ static int sugov_kthread_create(struct sugov_policy *sg_policy)
 	}
 
 	sg_policy->thread = thread;
-	kthread_bind_mask(thread, policy->related_cpus);
+
+	/* Kthread is bound to all CPUs by default */
+	if (!policy->dvfs_possible_from_any_cpu)
+		kthread_bind_mask(thread, policy->related_cpus);
+
 	init_irq_work(&sg_policy->irq_work, sugov_irq_work);
 	mutex_init(&sg_policy->work_lock);
 
@@ -885,6 +921,11 @@ struct cpufreq_governor *cpufreq_default_governor(void)
 
 static int __init sugov_register(void)
 {
+	int cpu;
+
+	for_each_possible_cpu(cpu)
+		per_cpu(sugov_cpu, cpu).cpu = cpu;
+
 	return cpufreq_register_governor(&schedutil_gov);
 }
 fs_initcall(sugov_register);

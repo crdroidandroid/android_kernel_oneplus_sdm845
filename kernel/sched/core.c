@@ -2349,6 +2349,7 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 	init_dl_task_timer(&p->dl);
 	__dl_clear_params(p);
 
+	init_rt_schedtune_timer(&p->rt);
 	INIT_LIST_HEAD(&p->rt.run_list);
 	p->rt.timeout		= 0;
 	p->rt.time_slice	= sched_rr_timeslice;
@@ -3501,16 +3502,20 @@ pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
 	struct task_struct *p;
 
 	/*
-	 * Optimization: we know that if all tasks are in
-	 * the fair class we can call that function directly:
+	 * Optimization: we know that if all tasks are in the fair class we can
+	 * call that function directly, but only if the @prev task wasn't of a
+	 * higher scheduling class, because otherwise those loose the
+	 * opportunity to pull in more work from other CPUs.
 	 */
-	if (likely(prev->sched_class == class &&
+	if (likely((prev->sched_class == &idle_sched_class ||
+		    prev->sched_class == &fair_sched_class) &&
 		   rq->nr_running == rq->cfs.h_nr_running)) {
+
 		p = fair_sched_class.pick_next_task(rq, prev, rf);
 		if (unlikely(p == RETRY_TASK))
 			goto again;
 
-		/* assumes fair_sched_class->next == idle_sched_class */
+		/* Assumes fair_sched_class->next == idle_sched_class */
 		if (unlikely(!p))
 			p = idle_sched_class.pick_next_task(rq, prev, rf);
 
@@ -3527,7 +3532,8 @@ again:
 		}
 	}
 
-	BUG(); /* the idle class will always have a runnable task */
+	/* The idle class should always have a runnable task: */
+	BUG();
 }
 
 /*
@@ -6036,12 +6042,6 @@ int sched_isolate_cpu(int cpu)
 
 	cpumask_andnot(&avail_cpus, cpu_online_mask, cpu_isolated_mask);
 
-	/* We cannot isolate ALL cpus in the system */
-	if (cpumask_weight(&avail_cpus) == 1) {
-		ret_code = -EINVAL;
-		goto out;
-	}
-
 	if (!cpu_online(cpu)) {
 		ret_code = -EINVAL;
 		goto out;
@@ -6049,6 +6049,13 @@ int sched_isolate_cpu(int cpu)
 
 	if (++cpu_isolation_vote[cpu] > 1)
 		goto out;
+
+	/* We cannot isolate ALL cpus in the system */
+	if (cpumask_weight(&avail_cpus) == 1) {
+		--cpu_isolation_vote[cpu];
+		ret_code = -EINVAL;
+		goto out;
+	}
 
 	/*
 	 * There is a race between watchdog being enabled by hotplug and
@@ -6928,9 +6935,24 @@ static void init_sched_groups_capacity(int cpu, struct sched_domain *sd)
 	WARN_ON(!sg);
 
 	do {
+		int cpu, max_cpu = -1;
+
 		cpumask_andnot(&avail_mask, sched_group_cpus(sg),
 							cpu_isolated_mask);
 		sg->group_weight = cpumask_weight(&avail_mask);
+
+		if (!(sd->flags & SD_ASYM_PACKING))
+			goto next;
+
+		for_each_cpu(cpu, sched_group_cpus(sg)) {
+			if (max_cpu < 0)
+				max_cpu = cpu;
+			else if (sched_asym_prefer(cpu, max_cpu))
+				max_cpu = cpu;
+		}
+		sg->asym_prefer_cpu = max_cpu;
+
+next:
 		sg = sg->next;
 	} while (sg != sd->groups);
 
@@ -8143,6 +8165,22 @@ int sched_cpu_dying(unsigned int cpu)
 }
 #endif
 
+#ifdef CONFIG_SCHED_SMT
+DEFINE_STATIC_KEY_FALSE(sched_smt_present);
+
+static void sched_init_smt(void)
+{
+	/*
+	 * We've enumerated all CPUs and will assume that if any CPU
+	 * has SMT siblings, CPU0 will too.
+	 */
+	if (cpumask_weight(cpu_smt_mask(0)) > 1)
+		static_branch_enable(&sched_smt_present);
+}
+#else
+static inline void sched_init_smt(void) { }
+#endif
+
 void __init sched_init_smp(void)
 {
 	cpumask_var_t non_isolated_cpus;
@@ -8175,6 +8213,9 @@ void __init sched_init_smp(void)
 
 	init_sched_rt_class();
 	init_sched_dl_class();
+
+	sched_init_smt();
+
 	sched_smp_initialized = true;
 }
 
@@ -8702,14 +8743,14 @@ void sched_move_task(struct task_struct *tsk)
 
 	if (queued)
 		dequeue_task(rq, tsk, DEQUEUE_SAVE | DEQUEUE_MOVE);
-	if (unlikely(running))
+	if (running)
 		put_prev_task(rq, tsk);
 
 	sched_change_group(tsk, TASK_MOVE_GROUP);
 
 	if (queued)
 		enqueue_task(rq, tsk, ENQUEUE_RESTORE | ENQUEUE_MOVE);
-	if (unlikely(running))
+	if (running)
 		set_curr_task(rq, tsk);
 
 	task_rq_unlock(rq, tsk, &rf);

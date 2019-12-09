@@ -20,6 +20,7 @@
 #include <linux/sched.h>
 #include <linux/sched/rt.h>
 #include <linux/syscore_ops.h>
+#include <linux/sched/core_ctl.h>
 
 #include <trace/events/sched.h>
 #include "sched.h"
@@ -81,6 +82,9 @@ static DEFINE_SPINLOCK(state_lock);
 static void apply_need(struct cluster_data *state);
 static void wake_up_core_ctl_thread(struct cluster_data *state);
 static bool initialized;
+
+ATOMIC_NOTIFIER_HEAD(core_ctl_notifier);
+static unsigned int last_nr_big;
 
 static unsigned int get_active_cpu_count(const struct cluster_data *cluster);
 static void cpuset_next(struct cluster_data *cluster);
@@ -582,6 +586,7 @@ static void update_running_avg(void)
 	}
 	spin_unlock_irqrestore(&state_lock, flags);
 
+	last_nr_big = big_avg;
 	walt_rotation_checkpoint(big_avg);
 }
 
@@ -679,12 +684,7 @@ static bool eval_need(struct cluster_data *cluster)
 	if (new_need > cluster->active_cpus) {
 		ret = 1;
 	} else {
-		/*
-		 * When there is no change in need and there are no more
-		 * active CPUs than currently needed, just update the
-		 * need time stamp and return.
-		 */
-		if (new_need == last_need && new_need == cluster->active_cpus) {
+		if (new_need == last_need) {
 			cluster->need_ts = now;
 			spin_unlock_irqrestore(&state_lock, flags);
 			return 0;
@@ -743,7 +743,6 @@ int core_ctl_set_boost(bool boost)
 			++cluster->boost;
 		} else {
 			if (!cluster->boost) {
-				pr_err("Error turning off boost. Boost already turned off\n");
 				ret = -EINVAL;
 				break;
 			} else {
@@ -765,6 +764,38 @@ int core_ctl_set_boost(bool boost)
 	return ret;
 }
 EXPORT_SYMBOL(core_ctl_set_boost);
+
+void core_ctl_notifier_register(struct notifier_block *n)
+{
+	atomic_notifier_chain_register(&core_ctl_notifier, n);
+}
+
+void core_ctl_notifier_unregister(struct notifier_block *n)
+{
+	atomic_notifier_chain_unregister(&core_ctl_notifier, n);
+}
+
+static void core_ctl_call_notifier(void)
+{
+	struct core_ctl_notif_data ndata;
+	struct notifier_block *nb;
+
+	/*
+	 * Don't bother querying the stats when the notifier
+	 * chain is empty.
+	 */
+	rcu_read_lock();
+	nb = rcu_dereference_raw(core_ctl_notifier.head);
+	rcu_read_unlock();
+
+	if (!nb)
+		return;
+
+	ndata.nr_big = last_nr_big;
+	ndata.coloc_load_pct = walt_get_default_coloc_group_load();
+
+	atomic_notifier_call_chain(&core_ctl_notifier, 0, &ndata);
+}
 
 void core_ctl_check(u64 window_start)
 {
@@ -801,6 +832,8 @@ void core_ctl_check(u64 window_start)
 		if (eval_need(cluster))
 			wake_up_core_ctl_thread(cluster);
 	}
+
+	core_ctl_call_notifier();
 }
 
 static void move_cpu_lru(struct cpu_data *cpu_data)
@@ -1131,42 +1164,6 @@ static int core_ctl_isolation_dead_cpu(unsigned int cpu)
 
 /* ============================ init code ============================== */
 
-static cpumask_var_t core_ctl_disable_cpumask;
-static bool core_ctl_disable_cpumask_present;
-
-static int __init core_ctl_disable_setup(char *str)
-{
-	if (!*str)
-		return -EINVAL;
-
-	alloc_bootmem_cpumask_var(&core_ctl_disable_cpumask);
-
-	if (cpulist_parse(str, core_ctl_disable_cpumask) < 0) {
-		free_bootmem_cpumask_var(core_ctl_disable_cpumask);
-		return -EINVAL;
-	}
-
-	core_ctl_disable_cpumask_present = true;
-	pr_info("disable_cpumask=%*pbl\n",
-			cpumask_pr_args(core_ctl_disable_cpumask));
-
-	return 0;
-}
-early_param("core_ctl_disable_cpumask", core_ctl_disable_setup);
-
-static bool should_skip(const struct cpumask *mask)
-{
-	if (!core_ctl_disable_cpumask_present)
-		return false;
-
-	/*
-	 * We operate on a cluster basis. Disable the core_ctl for
-	 * a cluster, if all of it's cpus are specified in
-	 * core_ctl_disable_cpumask
-	 */
-	return cpumask_subset(mask, core_ctl_disable_cpumask);
-}
-
 static struct cluster_data *find_cluster_by_first_cpu(unsigned int first_cpu)
 {
 	unsigned int i;
@@ -1187,9 +1184,6 @@ static int cluster_init(const struct cpumask *mask)
 	struct cpu_data *state;
 	unsigned int cpu;
 	struct sched_param param = { .sched_priority = MAX_RT_PRIO-1 };
-
-	if (should_skip(mask))
-		return 0;
 
 	if (find_cluster_by_first_cpu(first_cpu))
 		return 0;
@@ -1259,9 +1253,6 @@ static int __init core_ctl_init(void)
 {
 	unsigned int cpu;
 	struct cpumask cpus = *cpu_possible_mask;
-
-	if (should_skip(cpu_possible_mask))
-		return 0;
 
 #ifdef CONFIG_SCHED_CORE_ROTATE
 	register_syscore_ops(&core_ctl_syscore_ops);

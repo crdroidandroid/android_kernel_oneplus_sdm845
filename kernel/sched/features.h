@@ -61,6 +61,7 @@ SCHED_FEAT(TTWU_QUEUE, false)
  * When doing wakeups, attempt to limit superfluous scans of the LLC domain.
  */
 SCHED_FEAT(SIS_AVG_CPU, false)
+SCHED_FEAT(SIS_PROP, true)
 
 #ifdef HAVE_RT_PUSH_IPI
 /*
@@ -79,6 +80,11 @@ SCHED_FEAT(FORCE_SD_OVERLAP, false)
 SCHED_FEAT(RT_RUNTIME_SHARE, true)
 SCHED_FEAT(LB_MIN, false)
 SCHED_FEAT(ATTACH_AGE_LOAD, true)
+
+/*
+ * UtilEstimation. Use estimated CPU utilization.
+ */
+SCHED_FEAT(UTIL_EST, true)
 
 /*
  * Energy aware scheduling. Use platform energy model to guide scheduling
