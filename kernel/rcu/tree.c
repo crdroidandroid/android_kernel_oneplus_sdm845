@@ -3943,11 +3943,13 @@ static int rcu_pm_notify(struct notifier_block *self,
 	switch (action) {
 	case PM_HIBERNATION_PREPARE:
 	case PM_SUSPEND_PREPARE:
-		rcu_expedite_gp();
+		if (nr_cpu_ids <= 256) /* Expediting bad for large systems. */
+			rcu_expedite_gp();
 		break;
 	case PM_POST_HIBERNATION:
 	case PM_POST_SUSPEND:
-		rcu_unexpedite_gp();
+		if (nr_cpu_ids <= 256) /* Expediting bad for large systems. */
+			rcu_unexpedite_gp();
 		break;
 	default:
 		break;
