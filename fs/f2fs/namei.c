@@ -924,6 +924,7 @@ static int f2fs_rename(struct inode *old_dir, struct dentry *old_dentry,
 			goto put_out_dir;
 
 		f2fs_set_link(new_dir, new_entry, new_page, old_inode);
+		new_page = NULL;
 
 		new_inode->i_ctime = current_time(new_inode);
 		down_write(&F2FS_I(new_inode)->i_sem);
