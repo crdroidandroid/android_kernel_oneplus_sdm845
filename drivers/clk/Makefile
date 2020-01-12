@@ -93,3 +93,5 @@ endif
 obj-$(CONFIG_ARCH_ZX)			+= zte/
 obj-$(CONFIG_ARCH_ZYNQ)			+= zynq/
 obj-$(CONFIG_ARCH_QCOM)			+= msm/
+
+CFLAGS_clk.o += -Wformat=0
