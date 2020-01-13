@@ -20,7 +20,6 @@
 #include <linux/uio.h>
 #include <linux/uuid.h>
 #include <linux/file.h>
-#include <linux/string.h>
 
 #include "f2fs.h"
 #include "node.h"
