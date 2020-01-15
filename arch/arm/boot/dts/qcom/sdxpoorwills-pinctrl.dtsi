@@ -154,7 +154,7 @@
 				config {
 					pins = "gpio76", "gpio77";
 					drive-strength = <2>;
-					bias-disable;
+					bias-pull-up;
 				};
 			};
 
@@ -1748,6 +1748,20 @@
 				pins = "gpio99";
 				drive-strength = <2>;
 				bias-disable;
+				output-high;
+			};
+		};
+
+		sensor_enable_default: sensor_enable_default {
+			mux {
+				pins = "gpio90";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio90";
+				bias-pull-up;
+				drive-strength = <16>;
 				output-high;
 			};
 		};
