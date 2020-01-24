@@ -257,9 +257,6 @@ void fixup_walt_sched_stats_common(struct rq *rq, struct task_struct *p,
 	s64 task_load_delta = (s64)new_task_load - task_load(p);
 	s64 pred_demand_delta = PRED_DEMAND_DELTA;
 
-	fixup_cumulative_runnable_avg(&rq->walt_stats, task_load_delta,
-				      pred_demand_delta);
-
 	walt_fixup_cum_window_demand(rq, task_load_delta);
 }
 
