@@ -24,7 +24,6 @@
 
 #include <trace/events/sched.h>
 #include "sched.h"
-#include "walt.h"
 
 #define MAX_CPUS_PER_CLUSTER 6
 #define MAX_CLUSTERS 2
@@ -574,16 +573,11 @@ static void update_running_avg(void)
 		cluster->nrrun = nr_need + prev_misfit_need;
 		cluster->max_nr = compute_cluster_max_nr(index);
 
-		trace_core_ctl_update_nr_need(cluster->first_cpu, nr_need,
-					prev_misfit_need,
-					cluster->nrrun, cluster->max_nr);
-
 		big_avg += cluster_real_big_tasks(index);
 	}
 	spin_unlock_irqrestore(&state_lock, flags);
 
 	last_nr_big = big_avg;
-	walt_rotation_checkpoint(big_avg);
 }
 
 #define MAX_NR_THRESHOLD	4
@@ -665,8 +659,6 @@ static bool eval_need(struct cluster_data *cluster)
 			else if (c->busy < cluster->busy_down_thres[thres_idx])
 				c->is_busy = false;
 
-			trace_core_ctl_set_busy(c->cpu, c->busy, old_is_busy,
-						c->is_busy);
 			need_cpus += c->is_busy;
 		}
 		need_cpus = apply_task_need(cluster, need_cpus);
@@ -694,9 +686,7 @@ static bool eval_need(struct cluster_data *cluster)
 		cluster->need_ts = now;
 		cluster->need_cpus = new_need;
 	}
-	trace_core_ctl_eval_need(cluster->first_cpu, last_need, new_need,
-				 ret && need_flag);
-	spin_unlock_irqrestore(&state_lock, flags);
+		spin_unlock_irqrestore(&state_lock, flags);
 
 	return ret && need_flag;
 }
@@ -755,8 +745,6 @@ int core_ctl_set_boost(bool boost)
 			apply_need(cluster);
 	}
 
-	trace_core_ctl_set_boost(cluster->boost, ret);
-
 	return ret;
 }
 EXPORT_SYMBOL(core_ctl_set_boost);
@@ -788,7 +776,6 @@ static void core_ctl_call_notifier(void)
 		return;
 
 	ndata.nr_big = last_nr_big;
-	ndata.coloc_load_pct = walt_get_default_coloc_group_load();
 
 	atomic_notifier_call_chain(&core_ctl_notifier, 0, &ndata);
 }
@@ -1198,18 +1185,6 @@ static int __init core_ctl_init(void)
 	cpuhp_setup_state_nocalls(CPUHP_CORE_CTL_ISOLATION_DEAD,
 			"core_ctl/isolation:dead",
 			NULL, core_ctl_isolation_dead_cpu);
-
-#ifdef CONFIG_SCHED_WALT
-	for_each_cpu(cpu, &cpus) {
-		int ret;
-		const struct cpumask *cluster_cpus = cpu_coregroup_mask(cpu);
-
-		ret = cluster_init(cluster_cpus);
-		if (ret)
-			pr_warn("unable to create core ctl group: %d\n", ret);
-		cpumask_andnot(&cpus, &cpus, cluster_cpus);
-	}
-#endif
 
 	initialized = true;
 	return 0;
