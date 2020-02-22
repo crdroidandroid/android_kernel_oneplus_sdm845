@@ -7926,6 +7926,9 @@ static inline bool others_have_blocked(struct rq *rq)
 	if (READ_ONCE(rq->avg_dl.util_avg))
 		return true;
 
+	if (thermal_load_avg(rq))
+		return true;
+
 #ifdef CONFIG_HAVE_SCHED_AVG_IRQ
 	if (READ_ONCE(rq->avg_irq.util_avg))
 		return true;
@@ -7959,6 +7962,7 @@ static void update_blocked_averages(int cpu)
 
 	rq_lock_irqsave(rq, &rf);
 	update_rq_clock(rq);
+	unsigned long thermal_pressure;
 
 	/*
 	 * update_cfs_rq_load_avg() can call cpufreq_update_util(). Make sure
@@ -7970,6 +7974,8 @@ static void update_blocked_averages(int cpu)
 	update_irq_load_avg(rq, 0);
 
 	/* Don't need periodic decay once load/util_avg are null */
+	thermal_pressure = arch_scale_thermal_pressure(cpu_of(rq));
+
 	if (others_have_blocked(rq))
 		done = false;
 
