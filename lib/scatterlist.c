@@ -314,8 +314,9 @@ int __sg_alloc_table(struct sg_table *table, unsigned int nents,
 			 * linkage.  Without this, sg_kfree() may get
 			 * confused.
 			 */
-			if (prv)
+			if (prv) {
 				table->nents = ++table->orig_nents;
+			}
 
  			return -ENOMEM;
 		}

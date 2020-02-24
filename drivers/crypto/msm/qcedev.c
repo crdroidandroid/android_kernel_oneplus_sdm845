@@ -1699,6 +1699,7 @@ static inline long qcedev_ioctl(struct file *file,
 	switch (cmd) {
 	case QCEDEV_IOCTL_ENC_REQ:
 	case QCEDEV_IOCTL_DEC_REQ:
+		{
 		if (copy_from_user(&qcedev_areq->cipher_op_req,
 				(void __user *)arg,
 				sizeof(struct qcedev_cipher_op_req))) {
@@ -1721,6 +1722,7 @@ static inline long qcedev_ioctl(struct file *file,
 					sizeof(struct qcedev_cipher_op_req))) {
 			err = -EFAULT;
 			goto exit_free_qcedev_areq;
+		}
 		}
 		break;
 
@@ -1755,11 +1757,16 @@ static inline long qcedev_ioctl(struct file *file,
 		handle->sha_ctxt.init_done = true;
 		}
 		break;
+
 	case QCEDEV_IOCTL_GET_CMAC_REQ:
+		{
 		if (!podev->ce_support.cmac) {
 			err = -ENOTTY;
 			goto exit_free_qcedev_areq;
 		}
+		}
+		break;
+
 	case QCEDEV_IOCTL_SHA_UPDATE_REQ:
 		{
 		struct scatterlist sg_src;
@@ -1818,7 +1825,7 @@ static inline long qcedev_ioctl(struct file *file,
 		break;
 
 	case QCEDEV_IOCTL_SHA_FINAL_REQ:
-
+		{
 		if (handle->sha_ctxt.init_done == false) {
 			pr_err("%s Init was not called\n", __func__);
 			err = -EINVAL;
@@ -1860,6 +1867,7 @@ static inline long qcedev_ioctl(struct file *file,
 			goto exit_free_qcedev_areq;
 		}
 		handle->sha_ctxt.init_done = false;
+		}
 		break;
 
 	case QCEDEV_IOCTL_GET_SHA_REQ:
@@ -1912,65 +1920,65 @@ static inline long qcedev_ioctl(struct file *file,
 
 	case QCEDEV_IOCTL_MAP_BUF_REQ:
 		{
-			unsigned long long vaddr = 0;
-			struct qcedev_map_buf_req map_buf = { {0} };
-			int i = 0;
+		unsigned long long vaddr = 0;
+		struct qcedev_map_buf_req map_buf = { {0} };
+		int i = 0;
 
-			if (copy_from_user(&map_buf,
-					(void __user *)arg, sizeof(map_buf))) {
-				err = -EFAULT;
-				goto exit_free_qcedev_areq;
-			}
-
-			for (i = 0; i < map_buf.num_fds; i++) {
-				err = qcedev_check_and_map_buffer(handle,
-						map_buf.fd[i],
-						map_buf.fd_offset[i],
-						map_buf.fd_size[i],
-						&vaddr);
-				if (err) {
-					pr_err(
-						"%s: err: failed to map fd(%d) - %d\n",
-						__func__, map_buf.fd[i], err);
-					goto exit_free_qcedev_areq;
-				}
-				map_buf.buf_vaddr[i] = vaddr;
-				pr_info("%s: info: vaddr = %llx\n",
-					__func__, vaddr);
-			}
-
-			if (copy_to_user((void __user *)arg, &map_buf,
-					sizeof(map_buf))) {
-				err = -EFAULT;
-				goto exit_free_qcedev_areq;
-			}
-			break;
+		if (copy_from_user(&map_buf,
+				(void __user *)arg, sizeof(map_buf))) {
+			err = -EFAULT;
+			goto exit_free_qcedev_areq;
 		}
+
+		for (i = 0; i < map_buf.num_fds; i++) {
+			err = qcedev_check_and_map_buffer(handle,
+					map_buf.fd[i],
+					map_buf.fd_offset[i],
+					map_buf.fd_size[i],
+					&vaddr);
+			if (err) {
+				pr_err(
+					"%s: err: failed to map fd(%d) - %d\n",
+					__func__, map_buf.fd[i], err);
+				goto exit_free_qcedev_areq;
+			}
+			map_buf.buf_vaddr[i] = vaddr;
+			pr_info("%s: info: vaddr = %llx\n",
+				__func__, vaddr);
+		}
+
+		if (copy_to_user((void __user *)arg, &map_buf,
+				sizeof(map_buf))) {
+			err = -EFAULT;
+			goto exit_free_qcedev_areq;
+		}
+		}
+		break;
 
 	case QCEDEV_IOCTL_UNMAP_BUF_REQ:
 		{
-			struct qcedev_unmap_buf_req unmap_buf = { { 0 } };
-			int i = 0;
+		struct qcedev_unmap_buf_req unmap_buf = { { 0 } };
+		int i = 0;
 
-			if (copy_from_user(&unmap_buf,
-				(void __user *)arg, sizeof(unmap_buf))) {
-				err = -EFAULT;
+		if (copy_from_user(&unmap_buf,
+			(void __user *)arg, sizeof(unmap_buf))) {
+			err = -EFAULT;
+			goto exit_free_qcedev_areq;
+		}
+
+		for (i = 0; i < unmap_buf.num_fds; i++) {
+			err = qcedev_check_and_unmap_buffer(handle,
+					unmap_buf.fd[i]);
+			if (err) {
+				pr_err(
+					"%s: err: failed to unmap fd(%d) - %d\n",
+					 __func__,
+					unmap_buf.fd[i], err);
 				goto exit_free_qcedev_areq;
 			}
-
-			for (i = 0; i < unmap_buf.num_fds; i++) {
-				err = qcedev_check_and_unmap_buffer(handle,
-						unmap_buf.fd[i]);
-				if (err) {
-					pr_err(
-						"%s: err: failed to unmap fd(%d) - %d\n",
-						 __func__,
-						unmap_buf.fd[i], err);
-					goto exit_free_qcedev_areq;
-				}
-			}
-			break;
 		}
+		}
+		break;
 
 	default:
 		err = -ENOTTY;
