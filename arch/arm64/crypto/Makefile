@@ -31,7 +31,7 @@ ifeq ($(cc-name),gcc)
         CFLAGS_aes-ce-cipher-core.o += $(call cc-ifversion, -lt, 0800, -mcpu=cortex-a73.cortex-a53 -mtune=cortex-a73.cortex-a53)
         CFLAGS_aes-ce-cipher-core.o += $(call cc-ifversion, -ge, 0800, -mcpu=cortex-a75.cortex-a55 -mtune=cortex-a75.cortex-a55)
 else
-    CFLAGS_aes-ce-cipher-core.o += -mcpu=cortex-a55+crypto -mtune=cortex-a55+crypto
+    CFLAGS_aes-ce-cipher-core.o += -mcpu=cortex-a55+crypto -mtune=cortex-a55+crypto $(call cc-option,-no-integrated-as)
 endif
 
 obj-$(CONFIG_CRYPTO_AES_ARM64_CE_CCM) += aes-ce-ccm.o
