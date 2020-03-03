@@ -32,6 +32,7 @@
 #include <linux/kernel.h>
 #include <linux/timekeeping.h>
 #include <linux/wait.h>
+#include <linux/sched/clock.h>
 #include <linux/fcntl.h>
 #include <linux/fs.h>
 #include <linux/uaccess.h>
