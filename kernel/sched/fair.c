@@ -55,8 +55,6 @@
 unsigned int sysctl_sched_latency			= 6000000ULL;
 unsigned int normalized_sysctl_sched_latency		= 6000000ULL;
 
-DEFINE_PER_CPU_READ_MOSTLY(int, sched_load_boost);
-
 /*
  * Enable/disable honoring sync flag in energy-aware wakeups.
  */
@@ -144,8 +142,6 @@ unsigned int sysctl_sched_cfs_bandwidth_slice		= 5000UL;
  * (default: ~20%)
  */
 unsigned int capacity_margin				= 1280;
-unsigned int sysctl_sched_capacity_margin 		= 1078; /* ~5% margin */
-unsigned int sysctl_sched_capacity_margin_down 		= 1205; /* ~15% margin */
 
 static inline void update_load_add(struct load_weight *lw, unsigned long inc)
 {
