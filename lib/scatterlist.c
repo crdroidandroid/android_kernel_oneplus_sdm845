@@ -318,7 +318,7 @@ int __sg_alloc_table(struct sg_table *table, unsigned int nents,
 				table->nents = ++table->orig_nents;
 			}
 
- 			return -ENOMEM;
+			return -ENOMEM;
 		}
 
 		sg_init_table(sg, alloc_size);
