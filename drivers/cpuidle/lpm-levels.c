@@ -35,8 +35,6 @@
 #include <linux/sched.h>
 #include <linux/cpu_pm.h>
 #include <linux/cpuhotplug.h>
-#include <linux/workqueue.h>
-#include <linux/msm_drm_notify.h>
 #include <soc/qcom/pm.h>
 #include <soc/qcom/event_timer.h>
 #include <soc/qcom/lpm_levels.h>
@@ -96,22 +94,8 @@ module_param_named(lpm_prediction, lpm_prediction, bool, 0664);
 static bool cluster_prediction = true;
 module_param_named(cluster_prediction, cluster_prediction, bool, 0664);
 
-static bool cluster_use_deepest_state;
-module_param(cluster_use_deepest_state, bool, 0664);
-
 static uint32_t bias_hyst;
 module_param_named(bias_hyst, bias_hyst, uint, 0664);
-
-static bool cluster_deepest_state_auto __read_mostly = false;
-module_param_named(cluster_deepest_state_auto, cluster_deepest_state_auto, bool,  0644);
-
-static short cluster_deepest_state_auto_timeout __read_mostly = 3000;
-module_param_named(cluster_deepest_state_auto_timeout, cluster_deepest_state_auto_timeout, short, 0644);
-
-static bool screen_on = true;
-
-static struct workqueue_struct *enforce_deepest_state_wq;
-static struct delayed_work enforce_deepest_state_work;
 
 struct lpm_history {
 	uint32_t resi[MAXSAMPLES];
@@ -173,11 +157,6 @@ uint32_t register_system_pm_ops(struct system_pm_ops *pm_ops)
 	return 0;
 }
 
-void lpm_cluster_use_deepest_state(bool enable)
-{
-	cluster_use_deepest_state = enable;
-}
-
 static uint32_t least_cluster_latency(struct lpm_cluster *cluster,
 					struct latency_level *lat_level)
 {
@@ -193,9 +172,9 @@ static uint32_t least_cluster_latency(struct lpm_cluster *cluster,
 			level = &cluster->levels[i];
 			pwr_params = &level->pwr;
 			if (lat_level->reset_level == level->reset_level) {
-				if ((latency > pwr_params->exit_latency)
+				if ((latency > pwr_params->latency_us)
 						|| (!latency))
-					latency = pwr_params->exit_latency;
+					latency = pwr_params->latency_us;
 				break;
 			}
 		}
@@ -212,10 +191,10 @@ static uint32_t least_cluster_latency(struct lpm_cluster *cluster,
 				pwr_params = &level->pwr;
 				if (lat_level->reset_level ==
 						level->reset_level) {
-					if ((latency > pwr_params->exit_latency)
+					if ((latency > pwr_params->latency_us)
 								|| (!latency))
 						latency =
-						pwr_params->exit_latency;
+						pwr_params->latency_us;
 					break;
 				}
 			}
@@ -247,9 +226,9 @@ static uint32_t least_cpu_latency(struct list_head *child,
 				pwr_params = &level->pwr;
 				if (lat_level->reset_level
 						== level->reset_level) {
-					if ((lat > pwr_params->exit_latency)
+					if ((lat > pwr_params->latency_us)
 							|| (!lat))
-						lat = pwr_params->exit_latency;
+						lat = pwr_params->latency_us;
 					break;
 				}
 			}
@@ -474,6 +453,8 @@ static uint64_t lpm_cpuidle_predict(struct cpuidle_device *dev,
 	uint64_t max, avg, stddev;
 	int64_t thresh = LLONG_MAX;
 	struct lpm_history *history = &per_cpu(hist, dev->cpu);
+	uint32_t *min_residency = get_per_cpu_min_residency(dev->cpu);
+	uint32_t *max_residency = get_per_cpu_max_residency(dev->cpu);
 
 	if (!lpm_prediction || (!cpu->lpm_prediction && !cluster_prediction))
 		return 0;
@@ -486,7 +467,7 @@ static uint64_t lpm_cpuidle_predict(struct cpuidle_device *dev,
 		history->hinvalid = 0;
 		history->htmr_wkup = 1;
 		history->stime = 0;
-		return 1;
+		return 0;
 	}
 
 	/*
@@ -550,16 +531,12 @@ again:
 	 */
 	if (history->htmr_wkup != 1) {
 		for (j = 1; j < cpu->nlevels; j++) {
-			struct lpm_cpu_level *level = &cpu->levels[j];
-			uint32_t min_residency = level->pwr.min_residency;
-			uint32_t max_residency = 0;
-			struct lpm_cpu_level *lvl;
 			uint32_t failed = 0;
 			uint64_t total = 0;
 
 			for (i = 0; i < MAXSAMPLES; i++) {
 				if ((history->mode[i] == j) &&
-					(history->resi[i] < min_residency)) {
+					(history->resi[i] < min_residency[j])) {
 					failed++;
 					total += history->resi[i];
 				}
@@ -568,11 +545,9 @@ again:
 				*idx_restrict = j;
 				do_div(total, failed);
 				for (i = 0; i < j; i++) {
-					lvl = &cpu->levels[i];
-					max_residency = lvl->pwr.max_residency;
-					if (total < max_residency) {
-						*idx_restrict = i + 1;
-						total = max_residency;
+					if (total < max_residency[i]) {
+						*idx_restrict = i+1;
+						total = max_residency[i];
 						break;
 					}
 				}
@@ -640,9 +615,9 @@ static int cpu_power_select(struct cpuidle_device *dev,
 	uint64_t predicted = 0;
 	uint32_t htime = 0, idx_restrict_time = 0;
 	uint32_t next_wakeup_us = (uint32_t)sleep_us;
-	uint32_t min_residency, max_residency;
 	struct power_params *pwr_params;
-	uint64_t bias_time = 0;
+	uint32_t *min_residency = get_per_cpu_min_residency(dev->cpu);
+	uint32_t *max_residency = get_per_cpu_max_residency(dev->cpu);
 
 	if (sleep_disabled || sleep_us < 0)
 		return best_level;
@@ -652,6 +627,8 @@ static int cpu_power_select(struct cpuidle_device *dev,
 	next_event_us = (uint32_t)(ktime_to_us(get_next_event_time(dev->cpu)));
 
 	for (i = 0; i < cpu->nlevels; i++) {
+		struct lpm_cpu_level *level = &cpu->levels[i];
+		struct power_params *pwr_params = &level->pwr;
 		bool allow;
 
 		allow = i ? lpm_cpu_mode_allow(dev->cpu, i, true) : true;
@@ -659,12 +636,9 @@ static int cpu_power_select(struct cpuidle_device *dev,
 		if (!allow)
 			continue;
 
-		pwr_params = &cpu->levels[i].pwr;
-		lvl_latency_us = pwr_params->exit_latency;
-		min_residency = pwr_params->min_residency;
-		max_residency = pwr_params->max_residency;
+		lvl_latency_us = pwr_params->latency_us;
 
-		if (latency_us <= lvl_latency_us)
+		if (latency_us < lvl_latency_us)
 			break;
 
 		if (next_event_us) {
@@ -682,13 +656,11 @@ static int cpu_power_select(struct cpuidle_device *dev,
 			 * deeper low power modes than clock gating do not
 			 * call prediction.
 			 */
-			if (next_wakeup_us > max_residency) {
-				predicted = (lpm_cpuidle_predict(dev, cpu,
-					&idx_restrict,
-					&idx_restrict_time) == 1) ? 0 :
-						(max_residency >> 1);
-				if (predicted && (predicted < min_residency))
-					predicted = min_residency;
+			if (next_wakeup_us > max_residency[i]) {
+				predicted = lpm_cpuidle_predict(dev, cpu,
+					&idx_restrict, &idx_restrict_time);
+				if (predicted && (predicted < min_residency[i]))
+					predicted = min_residency[i];
 			} else
 				invalidate_predict_history(dev);
 		}
@@ -703,8 +675,8 @@ static int cpu_power_select(struct cpuidle_device *dev,
 		else
 			modified_time_us = 0;
 
-		if (predicted ? (predicted <= max_residency)
-			: (next_wakeup_us <= max_residency))
+		if (predicted ? (predicted <= max_residency[i])
+			: (next_wakeup_us <= max_residency[i]))
 			break;
 	}
 
@@ -715,21 +687,17 @@ static int cpu_power_select(struct cpuidle_device *dev,
 	 * Start timer to avoid staying in shallower mode forever
 	 * incase of misprediciton
 	 */
-
-	pwr_params = &cpu->levels[best_level].pwr;
-	min_residency = pwr_params->min_residency;
-	max_residency = pwr_params->max_residency;
-
 	if ((predicted || (idx_restrict != (cpu->nlevels + 1)))
-			&& (best_level < (cpu->nlevels-1))) {
+			&& ((best_level >= 0)
+			&& (best_level < (cpu->nlevels-1)))) {
 		htime = predicted + cpu->tmr_add;
 		if (htime == cpu->tmr_add)
 			htime = idx_restrict_time;
-		else if (htime > max_residency)
-			htime = max_residency;
+		else if (htime > max_residency[best_level])
+			htime = max_residency[best_level];
 
 		if ((next_wakeup_us > htime) &&
-			((next_wakeup_us - htime) > max_residency))
+			((next_wakeup_us - htime) > max_residency[best_level]))
 			histtimer_start(htime);
 	}
 
@@ -961,26 +929,6 @@ static void clear_cl_predict_history(void)
 	}
 }
 
-static int cluster_select_deepest(struct lpm_cluster *cluster)
-{
-	int i;
-
-	for (i = cluster->nlevels - 1; i >= 0; i--) {
-		struct lpm_cluster_level *level = &cluster->levels[i];
-
-		if (level->notify_rpm) {
-			if (!(sys_pm_ops && sys_pm_ops->sleep_allowed))
-				continue;
-			if (!sys_pm_ops->sleep_allowed())
-				continue;
-		}
-
-		break;
-	}
-
-	return i;
-}
-
 static int cluster_select(struct lpm_cluster *cluster, bool from_idle,
 							int *ispred)
 {
@@ -994,9 +942,6 @@ static int cluster_select(struct lpm_cluster *cluster, bool from_idle,
 
 	if (!cluster)
 		return -EINVAL;
-
-	if (cluster_use_deepest_state)
-		return cluster_select_deepest(cluster);
 
 	sleep_us = (uint32_t)get_cluster_sleep_time(cluster,
 						from_idle, &cpupred_us);
@@ -1029,11 +974,10 @@ static int cluster_select(struct lpm_cluster *cluster, bool from_idle,
 					&level->num_cpu_votes))
 			continue;
 
-		if (from_idle && latency_us <= pwr_params->exit_latency)
+		if (from_idle && latency_us < pwr_params->latency_us)
 			break;
 
-		if (sleep_us < (pwr_params->exit_latency +
-						pwr_params->entry_latency))
+		if (sleep_us < pwr_params->time_overhead_us)
 			break;
 
 		if (suspend_in_progress && from_idle && level->notify_rpm)
@@ -1595,7 +1539,8 @@ static int cluster_cpuidle_register(struct lpm_cluster *cl)
 			snprintf(st->desc, CPUIDLE_DESC_LEN, "%s",
 					cpu_level->name);
 			st->flags = 0;
-			st->exit_latency = cpu_level->pwr.exit_latency;
+			st->exit_latency = cpu_level->pwr.latency_us;
+			st->power_usage = cpu_level->pwr.ss_power;
 			st->target_residency = 0;
 			st->enter = lpm_cpuidle_enter;
 			if (i == lpm_cpu->nlevels - 1)
@@ -1742,48 +1687,6 @@ static int lpm_suspend_enter(suspend_state_t state)
 	return 0;
 }
 
-static int msm_drm_notifier_callback(struct notifier_block *self, unsigned long event, void *data)
-{
-	struct msm_drm_notifier *evdata = data;
-	int *blank;
-
-	if (event != MSM_DRM_EVENT_BLANK)
-		return 0;
-
-	if (evdata->id != MSM_DRM_PRIMARY_DISPLAY)
-		return 0;
-
-	if (evdata && evdata->data) {
-		blank = evdata->data;
-		switch (*blank) {
-		case MSM_DRM_BLANK_POWERDOWN:
-			screen_on = false;
-			break;
-		case MSM_DRM_BLANK_UNBLANK:
-			screen_on = true;
-			// Disable deepest state immidiately after unblank
-			if (cluster_deepest_state_auto)
-				cluster_use_deepest_state = false;
-			break;
-		}
-	}
-
-	if (cluster_deepest_state_auto && !delayed_work_busy(&enforce_deepest_state_work) && !screen_on)
-		queue_delayed_work(enforce_deepest_state_wq, &enforce_deepest_state_work,
-			msecs_to_jiffies(cluster_deepest_state_auto_timeout));
-
-	return 0;
-}
-
-static struct notifier_block deepest_state_notifier_block = {
-	.notifier_call = msm_drm_notifier_callback,
-};
-
-static void set_deepest_state(struct work_struct *work)
-{
-	cluster_use_deepest_state = !screen_on;
-}
-
 static const struct platform_suspend_ops lpm_suspend_ops = {
 	.enter = lpm_suspend_enter,
 	.valid = suspend_valid_only_mem,
@@ -1918,21 +1821,4 @@ static int __init lpm_levels_module_init(void)
 
 	return rc;
 }
-
-static int  __init scheduled_cluster_deepest_state_init(void)
-{
-	enforce_deepest_state_wq = create_freezable_workqueue("enforce_deepest_state_wq");
-
-	if (!enforce_deepest_state_wq)
-		return -EFAULT;
-
-	INIT_DELAYED_WORK(&enforce_deepest_state_work, set_deepest_state);
-
-	msm_drm_register_client(&deepest_state_notifier_block);
-
-	return 0;
-}
-
-late_initcall(scheduled_cluster_deepest_state_init);
-
 late_initcall(lpm_levels_module_init);
