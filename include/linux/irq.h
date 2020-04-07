@@ -520,9 +520,14 @@ extern void irq_migrate_all_off_this_cpu(void);
 #if defined(CONFIG_SMP) && defined(CONFIG_GENERIC_PENDING_IRQ)
 void irq_move_irq(struct irq_data *data);
 void irq_move_masked_irq(struct irq_data *data);
+bool irq_fixup_move_pending(struct irq_desc *desc, bool force_clear);
 #else
 static inline void irq_move_irq(struct irq_data *data) { }
 static inline void irq_move_masked_irq(struct irq_data *data) { }
+static inline bool irq_fixup_move_pending(struct irq_desc *desc, bool fclear)
+{
+	return false;
+}
 #endif
 
 extern int no_irq_affinity;
@@ -1010,6 +1015,14 @@ void irq_setup_generic_chip(struct irq_chip_generic *gc, u32 msk,
 int irq_setup_alt_chip(struct irq_data *d, unsigned int type);
 void irq_remove_generic_chip(struct irq_chip_generic *gc, u32 msk,
 			     unsigned int clr, unsigned int set);
+
+struct irq_chip_generic *
+devm_irq_alloc_generic_chip(struct device *dev, const char *name, int num_ct,
+			    unsigned int irq_base, void __iomem *reg_base,
+			    irq_flow_handler_t handler);
+int devm_irq_setup_generic_chip(struct device *dev, struct irq_chip_generic *gc,
+				u32 msk, enum irq_gc_flags flags,
+				unsigned int clr, unsigned int set);
 
 struct irq_chip_generic *irq_get_domain_generic_chip(struct irq_domain *d, unsigned int hw_irq);
 

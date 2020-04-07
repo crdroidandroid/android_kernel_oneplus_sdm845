@@ -2,7 +2,7 @@
 #define _LINUX_FS_H
 
 #include <linux/linkage.h>
-#include <linux/wait.h>
+#include <linux/wait_bit.h>
 #include <linux/kdev_t.h>
 #include <linux/dcache.h>
 #include <linux/path.h>
@@ -702,6 +702,7 @@ struct inode {
 		struct rcu_head		i_rcu;
 	};
 	u64			i_version;
+	atomic64_t		i_sequence; /* see futex */
 	atomic_t		i_count;
 	atomic_t		i_dio_count;
 	atomic_t		i_writecount;

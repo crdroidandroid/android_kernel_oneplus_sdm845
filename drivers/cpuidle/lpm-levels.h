@@ -18,7 +18,9 @@
 #define CLUST_SMPL_INVLD_TIME 40000
 #define DEFAULT_PREMATURE_CNT 3
 #define DEFAULT_STDDEV 100
+#define DEFAULT_IPI_STDDEV 400
 #define DEFAULT_TIMER_ADD 100
+#define DEFAULT_IPI_TIMER_ADD 900
 #define TIMER_ADD_LOW 100
 #define TIMER_ADD_HIGH 1500
 #define STDDEV_LOW 100
@@ -27,8 +29,11 @@
 #define PREMATURE_CNT_HIGH 5
 
 struct power_params {
-	uint32_t entry_latency;		/* Entry latency */
-	uint32_t exit_latency;		/* Exit latency */
+	uint32_t latency_us;		/* Enter + Exit latency */
+	uint32_t ss_power;		/* Steady state power */
+	uint32_t energy_overhead;	/* Enter + exit over head */
+	uint32_t time_overhead_us;	/* Enter + exit overhead */
+	uint32_t residencies[NR_LPM_LEVELS];
 	uint32_t min_residency;
 	uint32_t max_residency;
 };
@@ -53,6 +58,7 @@ struct lpm_cpu {
 	uint32_t ref_premature_cnt;
 	uint32_t tmr_add;
 	bool lpm_prediction;
+	bool ipi_prediction;
 	struct cpuidle_driver *drv;
 	struct lpm_cluster *parent;
 };
@@ -60,7 +66,7 @@ struct lpm_cpu {
 struct lpm_level_avail {
 	bool idle_enabled;
 	bool suspend_enabled;
-	uint32_t exit_latency;
+	uint32_t latency_us;
 	struct kobject *kobj;
 	struct kobj_attribute idle_enabled_attr;
 	struct kobj_attribute suspend_enabled_attr;

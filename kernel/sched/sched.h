@@ -1131,16 +1131,18 @@ enum numa_topology_type {
 extern enum numa_topology_type sched_numa_topology_type;
 extern int sched_max_numa_distance;
 extern bool find_numa_distance(int distance);
-#endif
-
-#ifdef CONFIG_NUMA
 extern void sched_init_numa(void);
 extern void sched_domains_numa_masks_set(unsigned int cpu);
 extern void sched_domains_numa_masks_clear(unsigned int cpu);
+extern int sched_numa_find_closest(const struct cpumask *cpus, int cpu);
 #else
 static inline void sched_init_numa(void) { }
 static inline void sched_domains_numa_masks_set(unsigned int cpu) { }
 static inline void sched_domains_numa_masks_clear(unsigned int cpu) { }
+static inline int sched_numa_find_closest(const struct cpumask *cpus, int cpu)
+{
+	return nr_cpu_ids;
+}
 #endif
 
 #ifdef CONFIG_NUMA_BALANCING
@@ -2221,10 +2223,6 @@ static inline void double_rq_unlock(struct rq *rq1, struct rq *rq2)
 		__release(rq2->lock);
 }
 
-/*
- * task_may_not_preempt - check whether a task may not be preemptible soon
- */
-extern bool task_may_not_preempt(struct task_struct *task, int cpu);
 extern void set_rq_online (struct rq *rq);
 extern void set_rq_offline(struct rq *rq);
 extern bool sched_smp_initialized;

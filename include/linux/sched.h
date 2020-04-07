@@ -2436,7 +2436,6 @@ static inline void put_task_struct(struct task_struct *t)
 }
 
 struct task_struct *task_rcu_dereference(struct task_struct **ptask);
-struct task_struct *try_get_task_struct(struct task_struct **ptask);
 
 #ifdef CONFIG_VIRT_CPU_ACCOUNTING_GEN
 extern void task_cputime(struct task_struct *t,
@@ -2689,7 +2688,6 @@ extern void do_set_cpus_allowed(struct task_struct *p,
 
 extern int set_cpus_allowed_ptr(struct task_struct *p,
 				const struct cpumask *new_mask);
-extern bool cpupri_check_rt(void);
 #else
 static inline void do_set_cpus_allowed(struct task_struct *p,
 				      const struct cpumask *new_mask)
@@ -2701,10 +2699,6 @@ static inline int set_cpus_allowed_ptr(struct task_struct *p,
 	if (!cpumask_test_cpu(0, new_mask))
 		return -EINVAL;
 	return 0;
-}
-static inline bool cpupri_check_rt(void)
-{
-	return false;
 }
 #endif
 static inline int sched_update_freq_max_load(const cpumask_t *cpumask)

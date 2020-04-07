@@ -130,6 +130,7 @@ struct irq_domain_chip_generic;
  * @host_data: private data pointer for use by owner.  Not touched by irq_domain
  *             core code.
  * @flags: host per irq_domain flags
+ * @mapcount: The number of mapped interrupts
  *
  * Optional elements
  * @of_node: Pointer to device tree nodes associated with the irq_domain. Used
@@ -138,6 +139,7 @@ struct irq_domain_chip_generic;
  *      setting up one or more generic chips for interrupt controllers
  *      drivers using the generic chip library which uses this pointer.
  * @parent: Pointer to parent irq_domain to support hierarchy irq_domains
+ * @debugfs_file: dentry for the domain debugfs file
  *
  * Revmap data, used internally by irq_domain
  * @revmap_direct_max_irq: The largest hwirq that can be set for controllers that
@@ -152,6 +154,7 @@ struct irq_domain {
 	const struct irq_domain_ops *ops;
 	void *host_data;
 	unsigned int flags;
+	unsigned int mapcount;
 
 	/* Optional data */
 	struct fwnode_handle *fwnode;
@@ -159,6 +162,9 @@ struct irq_domain {
 	struct irq_domain_chip_generic *gc;
 #ifdef	CONFIG_IRQ_DOMAIN_HIERARCHY
 	struct irq_domain *parent;
+#endif
+#ifdef CONFIG_GENERIC_IRQ_DEBUGFS
+	struct dentry		*debugfs_file;
 #endif
 
 	/* reverse map data. The linear map gets appended to the irq_domain */
@@ -189,6 +195,9 @@ enum {
 	/* Irq domain implements MSI remapping */
 	IRQ_DOMAIN_FLAG_MSI_REMAP	= (1 << 5),
 
+	/* Irq domain name was allocated in __irq_domain_add() */
+	IRQ_DOMAIN_NAME_ALLOCATED	= (1 << 6),
+
 	/*
 	 * Flags starting from IRQ_DOMAIN_FLAG_NONCORE are reserved
 	 * for implementation specific purposes and ignored by the
@@ -203,7 +212,33 @@ static inline struct device_node *irq_domain_get_of_node(struct irq_domain *d)
 }
 
 #ifdef CONFIG_IRQ_DOMAIN
-struct fwnode_handle *irq_domain_alloc_fwnode(void *data);
+struct fwnode_handle *__irq_domain_alloc_fwnode(unsigned int type, int id,
+						const char *name, void *data);
+
+enum {
+	IRQCHIP_FWNODE_REAL,
+	IRQCHIP_FWNODE_NAMED,
+	IRQCHIP_FWNODE_NAMED_ID,
+};
+
+static inline
+struct fwnode_handle *irq_domain_alloc_named_fwnode(const char *name)
+{
+	return __irq_domain_alloc_fwnode(IRQCHIP_FWNODE_NAMED, 0, name, NULL);
+}
+
+static inline
+struct fwnode_handle *irq_domain_alloc_named_id_fwnode(const char *name, int id)
+{
+	return __irq_domain_alloc_fwnode(IRQCHIP_FWNODE_NAMED_ID, id, name,
+					 NULL);
+}
+
+static inline struct fwnode_handle *irq_domain_alloc_fwnode(void *data)
+{
+	return __irq_domain_alloc_fwnode(IRQCHIP_FWNODE_REAL, 0, NULL, data);
+}
+
 void irq_domain_free_fwnode(struct fwnode_handle *fwnode);
 struct irq_domain *__irq_domain_add(struct fwnode_handle *fwnode, int size,
 				    irq_hw_number_t hwirq_max, int direct_max,

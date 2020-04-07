@@ -185,7 +185,7 @@ struct mem_cgroup_event {
 	 */
 	poll_table pt;
 	wait_queue_head_t *wqh;
-	wait_queue_t wait;
+	wait_queue_entry_t wait;
 	struct work_struct remove;
 };
 
@@ -1506,10 +1506,10 @@ static DECLARE_WAIT_QUEUE_HEAD(memcg_oom_waitq);
 
 struct oom_wait_info {
 	struct mem_cgroup *memcg;
-	wait_queue_t	wait;
+	wait_queue_entry_t	wait;
 };
 
-static int memcg_oom_wake_function(wait_queue_t *wait,
+static int memcg_oom_wake_function(wait_queue_entry_t *wait,
 	unsigned mode, int sync, void *arg)
 {
 	struct mem_cgroup *wake_memcg = (struct mem_cgroup *)arg;
@@ -1597,7 +1597,7 @@ bool mem_cgroup_oom_synchronize(bool handle)
 	owait.wait.flags = 0;
 	owait.wait.func = memcg_oom_wake_function;
 	owait.wait.private = current;
-	INIT_LIST_HEAD(&owait.wait.task_list);
+	INIT_LIST_HEAD(&owait.wait.entry);
 
 	prepare_to_wait(&memcg_oom_waitq, &owait.wait, TASK_KILLABLE);
 	mem_cgroup_mark_under_oom(memcg);
@@ -3500,7 +3500,7 @@ static void __mem_cgroup_usage_unregister_event(struct mem_cgroup *memcg,
 	struct mem_cgroup_thresholds *thresholds;
 	struct mem_cgroup_threshold_ary *new;
 	unsigned long usage;
-	int i, j, size;
+	int i, j, size, entries;
 
 	mutex_lock(&memcg->thresholds_lock);
 
@@ -3520,13 +3520,19 @@ static void __mem_cgroup_usage_unregister_event(struct mem_cgroup *memcg,
 	__mem_cgroup_threshold(memcg, type == _MEMSWAP);
 
 	/* Calculate new number of threshold */
-	size = 0;
+	size = entries = 0;
 	for (i = 0; i < thresholds->primary->size; i++) {
 		if (thresholds->primary->entries[i].eventfd != eventfd)
 			size++;
+		else
+			entries++;
 	}
 
 	new = thresholds->spare;
+
+	/* If no items related to eventfd have been cleared, nothing to do */
+	if (!entries)
+		goto unlock;
 
 	/* Set thresholds array to NULL if we don't have thresholds */
 	if (!size) {
@@ -3781,7 +3787,7 @@ static void memcg_event_remove(struct work_struct *work)
  *
  * Called with wqh->lock held and interrupts disabled.
  */
-static int memcg_event_wake(wait_queue_t *wait, unsigned mode,
+static int memcg_event_wake(wait_queue_entry_t *wait, unsigned mode,
 			    int sync, void *key)
 {
 	struct mem_cgroup_event *event =
