@@ -468,7 +468,7 @@ static bool synchronize_rcu_expedited_wait_once(long tlimit)
 	int t;
 	struct rcu_node *rnp_root = rcu_get_root();
 
-	t = swait_event_timeout_exclusive(rcu_state.expedited_wq,
+	t = swait_event_timeout(rcu_state.expedited_wq,
 					  sync_rcu_exp_done_unlocked(rnp_root),
 					  tlimit);
 	// Workqueues should not be signaled.
