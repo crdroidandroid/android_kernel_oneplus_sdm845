@@ -13,7 +13,6 @@
  ** 	<author>	<data>			<desc>
  **  morgan.gu@BSP.TP modified for oem 2017-10-30 s3706 tp_driver
  ************************************************************************************/
-#include "synaptics_driver_s3320.h"
 #include <linux/of_gpio.h>
 #include <linux/irq.h>
 #include <linux/i2c.h>
@@ -6601,17 +6600,6 @@ static int msm_drm_notifier_callback(
 
 }
 #endif
-
-void synaptics_s3320_enable_global(bool enabled)
-{
-	if (ts_g == NULL)
-		return;
-
-	if (enabled)
-		touch_enable(ts_g);
-	else
-		touch_disable(ts_g);
-}
 
 static int __init tpd_driver_init(void)
 {
