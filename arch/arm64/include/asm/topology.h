@@ -47,6 +47,12 @@ extern unsigned long scale_cpu_capacity(struct sched_domain *sd, int cpu);
 #define arch_update_cpu_capacity update_cpu_power_capacity
 extern void update_cpu_power_capacity(int cpu);
 
+/* Replace task scheduler's default thermal pressure retrieve API */
+#define arch_scale_thermal_pressure topology_get_thermal_pressure
+extern unsigned long topology_get_thermal_pressure(int cpu);
+extern void arch_set_thermal_pressure(struct cpumask *cpus,
+				       unsigned long th_pressure);
+
 #include <asm-generic/topology.h>
 
 #endif /* _ASM_ARM_TOPOLOGY_H */
