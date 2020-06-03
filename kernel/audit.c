@@ -1407,7 +1407,7 @@ struct audit_buffer *audit_log_start(struct audit_context *ctx, gfp_t gfp_mask,
 {
 	struct audit_buffer	*ab	= NULL;
 	struct timespec		t;
-	unsigned int		uninitialized_var(serial);
+	unsigned int		serial;
 	int reserve = 5; /* Allow atomic callers to go up to five
 			    entries over the normal backlog limit */
 	unsigned long timeout_start = jiffies;
