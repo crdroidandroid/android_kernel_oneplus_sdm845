@@ -862,6 +862,7 @@ static void log_failure_reason(const struct pil_tz_data *d)
 
 	strlcpy(reason, smem_reason, min(size, MAX_SSR_REASON_LEN));
 	pr_err("%s subsystem failure reason: %s.\n", name, reason);
+	subsys_store_crash_reason(d->subsys, reason);
 }
 
 static int subsys_shutdown(const struct subsys_desc *subsys, bool force_stop)
