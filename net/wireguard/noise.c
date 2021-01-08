@@ -87,15 +87,12 @@ static void handshake_zero(struct noise_handshake *handshake)
 
 void wg_noise_handshake_clear(struct noise_handshake *handshake)
 {
+	down_write(&handshake->lock);
 	wg_index_hashtable_remove(
 			handshake->entry.peer->device->index_hashtable,
 			&handshake->entry);
-	down_write(&handshake->lock);
 	handshake_zero(handshake);
 	up_write(&handshake->lock);
-	wg_index_hashtable_remove(
-			handshake->entry.peer->device->index_hashtable,
-			&handshake->entry);
 }
 
 static struct noise_keypair *keypair_create(struct wg_peer *peer)
@@ -619,8 +616,8 @@ wg_noise_handshake_consume_initiation(struct message_handshake_initiation *src,
 	memcpy(handshake->hash, hash, NOISE_HASH_LEN);
 	memcpy(handshake->chaining_key, chaining_key, NOISE_HASH_LEN);
 	handshake->remote_index = src->sender_index;
-	if ((s64)(handshake->last_initiation_consumption -
-	    (initiation_consumption = ktime_get_coarse_boottime_ns())) < 0)
+	initiation_consumption = ktime_get_coarse_boottime_ns();
+	if ((s64)(handshake->last_initiation_consumption - initiation_consumption) < 0)
 		handshake->last_initiation_consumption = initiation_consumption;
 	handshake->state = HANDSHAKE_CONSUMED_INITIATION;
 	up_write(&handshake->lock);
