@@ -478,7 +478,7 @@
 			2803200 1298
 		>;
 		idle-cost-data = <
-			100 80 60 40
+			25 20 15 10
 		>;
 	};
 	CLUSTER_COST_0: cluster-cost0 {
