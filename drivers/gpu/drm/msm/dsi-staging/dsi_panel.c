@@ -864,8 +864,10 @@ static int dsi_panel_led_bl_register(struct dsi_panel *panel,
 }
 #endif
 
+extern int op_dimlayer_bl_alpha;
+extern int op_dimlayer_bl_enabled;
+extern int op_dimlayer_bl_enable_real;
 bool HBM_flag;
-
 int dsi_panel_update_backlight(struct dsi_panel *panel,
 	u32 bl_lvl)
 {
@@ -878,7 +880,24 @@ int dsi_panel_update_backlight(struct dsi_panel *panel,
 	}
 
 	dsi = &panel->mipi_device;
-
+	/* add for fingerprint*/
+	if (panel->is_hbm_enabled) {
+		pr_err("OPEN HBM\n");
+		return 0;
+	}
+	/*** DC Backlight config ***/
+	if (op_dimlayer_bl_enabled != op_dimlayer_bl_enable_real) {
+		op_dimlayer_bl_enable_real = op_dimlayer_bl_enabled;
+		if (op_dimlayer_bl_enable_real) {
+		bl_lvl = op_dimlayer_bl_alpha;
+			pr_err("dc light enable\n");
+		} else {
+			pr_err("dc light disenable\n");
+		}
+	}
+	if (op_dimlayer_bl_enable_real) {
+		bl_lvl = op_dimlayer_bl_alpha;
+	}
 	if (panel->bl_config.bl_high2bit) {
 		if (HBM_flag == true)
 			return 0;
@@ -897,6 +916,12 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 {
 	int rc = 0;
 	struct dsi_backlight_config *bl = &panel->bl_config;
+	static bool first_bl_level = true;
+
+	if (first_bl_level || (bl_lvl == 0)) {
+        pr_err("---backlight level = %d---\n", bl_lvl);
+        first_bl_level = (bl_lvl == 0)? true : false;
+	}
 
 	if (panel->type == EXT_BRIDGE)
 		return 0;
