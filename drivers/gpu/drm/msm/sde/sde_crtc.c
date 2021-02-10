@@ -26,7 +26,14 @@
 #include <drm/drm_crtc.h>
 #include <drm/drm_crtc_helper.h>
 #include <drm/drm_flip_work.h>
-
+#include <linux/msm_drm_notify.h>
+#include <linux/notifier.h>
+#include <linux/err.h>
+#include <linux/list.h>
+#include <linux/err.h>
+#include "msm_drv.h"
+#include "msm_mmu.h"
+#include <drm/drm_mipi_dsi.h>
 #include "dsi_display.h"
 #include "sde_kms.h"
 #include "sde_hw_lm.h"
@@ -2632,6 +2639,17 @@ static void _sde_crtc_set_dim_layer_v1(struct sde_crtc_state *cstate,
 	}
 }
 
+bool sde_crtc_get_dimlayer_mode(struct drm_crtc_state *crtc_state)
+{
+	struct sde_crtc_state *cstate;
+
+	if (!crtc_state)
+		return false;
+
+	cstate = to_sde_crtc_state(crtc_state);
+	return !!cstate->fingerprint_dim_layer;
+}
+
 bool sde_crtc_get_fingerprint_mode(struct drm_crtc_state *crtc_state)
 {
 	struct sde_crtc_state *cstate;
@@ -2687,6 +2705,28 @@ struct ba brightness_alpha_lut[] = {
 	{2000, 0x83},
 };
 
+struct ba brightness_alpha_lut_dc[] = {
+
+	{0, 0xff},
+	{1, 0xE0},
+	{2, 0xd5},
+	{3, 0xd3},
+	{4, 0xd0},
+	{5, 0xce},
+	{6, 0xcb},
+	{8, 0xc8},
+	{10, 0xc4},
+	{15, 0xba},
+	{20, 0xb0},
+	{30, 0xa0},
+	{45, 0x8b},
+	{70, 0x72},
+	{100, 0x5a},
+	{150, 0x38},
+	{227, 0xe},
+	{260, 0x00},
+};
+
 static int interpolate(int x, int xa, int xb, int ya, int yb)
 {
 	int bf, factor, plus;
@@ -2717,10 +2757,35 @@ int brightness_to_alpha(int brightness)
 		return brightness_alpha_lut[level - 1].alpha;
 
 	return interpolate(brightness,
-			brightness_alpha_lut[i - 1].brightness,
+			brightness_alpha_lut[i-1].brightness,
 			brightness_alpha_lut[i].brightness,
-			brightness_alpha_lut[i - 1].alpha,
+			brightness_alpha_lut[i-1].alpha,
 			brightness_alpha_lut[i].alpha);
+}
+
+
+int bl_to_alpha_dc(int brightness)
+{
+	int level = ARRAY_SIZE(brightness_alpha_lut_dc);
+	int i = 0;
+	int alpha;
+
+	for (i = 0; i < ARRAY_SIZE(brightness_alpha_lut_dc); i++) {
+		if (brightness_alpha_lut_dc[i].brightness >= brightness)
+			break;
+	}
+
+	if (i == 0)
+		alpha = brightness_alpha_lut_dc[0].alpha;
+	else if (i == level)
+		alpha = brightness_alpha_lut_dc[level - 1].alpha;
+	else
+		alpha = interpolate(brightness,
+			brightness_alpha_lut_dc[i-1].brightness,
+			brightness_alpha_lut_dc[i].brightness,
+			brightness_alpha_lut_dc[i-1].alpha,
+			brightness_alpha_lut_dc[i].alpha);
+	return alpha;
 }
 
 int oneplus_get_panel_brightness_to_alpha(void)
@@ -2733,7 +2798,10 @@ int oneplus_get_panel_brightness_to_alpha(void)
 	if (oneplus_panel_alpha)
 		return oneplus_panel_alpha;
 
-	return brightness_to_alpha(display->panel->hbm_backlight);
+        if (display->panel->dim_status)
+                return brightness_to_alpha(display->panel->hbm_backlight);
+        else
+        return bl_to_alpha_dc(display->panel->hbm_backlight);
 }
 
 int oneplus_onscreenaod_hid = 0;
