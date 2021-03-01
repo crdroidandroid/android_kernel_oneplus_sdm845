@@ -1,3 +1,3 @@
 ## Hola amiguitos
 
-This is a current snapshot of the eleven branch of the Illusion kernel for SDM845 from AOSiP-Devices/kernel_oneplus_sdm845, added here as a base to work from for ease of fetching. 
+This branch is a work-in-progress for adapting Illusion kernel to support crDroid 7 device trees for OnePlus 6/6T, in order to re-add DeviceSettings in place of lineage-sdk device-specific pieces, due to lack of LOS kernel support.
