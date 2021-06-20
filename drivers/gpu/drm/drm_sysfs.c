@@ -268,6 +268,38 @@ static ssize_t dsi_seed_command_store(struct device *dev,
 
 	return count;
 }
+static ssize_t acl_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct drm_connector *connector = to_drm_connector(dev);
+	int ret = 0;
+	int acl_mode = 0;
+
+	acl_mode = dsi_display_get_acl_mode(connector);
+
+	ret = scnprintf(buf, PAGE_SIZE, "%d\n", acl_mode);
+	return ret;
+}
+
+static ssize_t acl_store(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct drm_connector *connector = to_drm_connector(dev);
+	int ret = 0;
+	int acl_mode = 0;
+
+	ret = kstrtoint(buf, 10, &acl_mode);
+	if (ret) {
+		pr_err("kstrtoint failed. ret=%d\n", ret);
+		return ret;
+	}
+
+	ret = dsi_display_set_acl_mode(connector, acl_mode);
+	if (ret)
+		pr_err("set acl mode(%d) fail\n", acl_mode);
+
+	return count;
+}
 
 static ssize_t hbm_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
@@ -366,6 +398,78 @@ static ssize_t aod_store(struct device *dev,
 	ret = dsi_display_set_aod_mode(connector, aod_mode);
 	if (ret)
 		pr_err("set AOD mode(%d) fail\n", aod_mode);
+
+	return count;
+}
+
+static ssize_t aod_test_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct drm_connector *connector = to_drm_connector(dev);
+	int ret = 0;
+	int aod_mode = 0;
+
+	aod_mode = dsi_display_get_aod_mode_test(connector);
+
+	ret = scnprintf(buf, PAGE_SIZE, "AOD mode = %d\n"
+			"0--AOD off\n"
+			"1--AOD(10nit-alpm)\n"
+			"2--AOD(50nit-alpm)\n"
+			"3--AOD(10nit-hlpm)\n"
+			"4--AOD(50nit-hlpm)\n",
+			aod_mode);
+	return ret;
+}
+
+static ssize_t aod_test_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct drm_connector *connector = to_drm_connector(dev);
+	int ret = 0;
+	int aod_mode = 0;
+
+	ret = kstrtoint(buf, 10, &aod_mode);
+	if (ret) {
+		pr_err("kstrtoint failed. ret=%d\n", ret);
+		return ret;
+	}
+
+	ret = dsi_display_set_aod_mode_test(connector, aod_mode);
+	if (ret)
+		pr_err("set AOD mode(%d) fail\n", aod_mode);
+
+	return count;
+}
+
+static ssize_t aod_disable_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct drm_connector *connector = to_drm_connector(dev);
+	int ret = 0;
+	int aod_disable = 0;
+
+	aod_disable = dsi_display_get_aod_disable(connector);
+
+	ret = scnprintf(buf, PAGE_SIZE, "%d\n", aod_disable); 
+	return ret;
+}
+
+static ssize_t aod_disable_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct drm_connector *connector = to_drm_connector(dev);
+	int ret = 0;
+	int aod_disable = 0;
+
+	ret = kstrtoint(buf, 10, &aod_disable);
+	if (ret) {
+		pr_err("kstrtoint failed. ret=%d\n", ret);
+		return ret;
+	}
+
+	ret = dsi_display_set_aod_disable(connector, aod_disable);
+	if (ret)
+		pr_err("set AOD disable(%d) fail\n", aod_disable);
 
 	return count;
 }
@@ -576,20 +680,194 @@ extern  ssize_t oneplus_display_notify_aod_hid(struct device *dev,
 		struct device_attribute *attr,
 		const char *buf, size_t count);
 
+
+static ssize_t native_display_p3_mode_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct drm_connector *connector = to_drm_connector(dev);
+	int ret = 0;
+	int native_display_p3_mode = 0;
+
+	native_display_p3_mode = dsi_display_get_native_display_p3_mode(connector);
+
+	ret = scnprintf(buf, PAGE_SIZE, "%d\n", native_display_p3_mode);
+	return ret;
+}
+
+static ssize_t native_display_p3_mode_store(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct drm_connector *connector = to_drm_connector(dev);
+	int ret = 0;
+	int native_display_p3_mode = 0;
+
+	ret = kstrtoint(buf, 10, &native_display_p3_mode);
+	if (ret) {
+		pr_err("kstrtoint failed. ret=%d\n", ret);
+		return ret;
+	}
+
+	ret = dsi_display_set_native_display_p3_mode(connector, native_display_p3_mode);
+	if (ret) {
+		pr_err("set native_display_p3  mode(%d) fail\n", native_display_p3_mode);
+	}
+	return count;
+}
+static ssize_t native_display_wide_color_mode_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct drm_connector *connector = to_drm_connector(dev);
+	int ret = 0;
+	int native_display_wide_color_mode = 0;
+
+	native_display_wide_color_mode = dsi_display_get_native_display_wide_color_mode(connector);
+
+	ret = scnprintf(buf, PAGE_SIZE, "%d\n", native_display_wide_color_mode);
+	return ret;
+}
+
+static ssize_t native_display_customer_p3_mode_store(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct drm_connector *connector = to_drm_connector(dev);
+	int ret = 0;
+	int native_display_customer_p3_mode = 0;
+
+	ret = kstrtoint(buf, 10, &native_display_customer_p3_mode);
+	if (ret) {
+		pr_err("kstrtoint failed. ret=%d\n", ret);
+		return ret;
+	}
+
+	ret = dsi_display_set_customer_p3_mode(connector, native_display_customer_p3_mode);
+	if (ret) {
+		pr_err("set customer p3  mode(%d) fail\n", native_display_customer_p3_mode);
+	}
+	return count;
+}
+
+static ssize_t native_display_customer_p3_mode_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct drm_connector *connector = to_drm_connector(dev);
+	int ret = 0;
+	int native_display_customer_p3_mode = 0;
+
+	native_display_customer_p3_mode = dsi_display_get_customer_p3_mode(connector);
+
+        ret = scnprintf(buf, PAGE_SIZE, "%d\n", native_display_customer_p3_mode);
+	return ret;
+}
+static ssize_t native_display_customer_srgb_mode_store(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct drm_connector *connector = to_drm_connector(dev);
+	int ret = 0;
+	int native_display_customer_srgb_mode = 0;
+
+	ret = kstrtoint(buf, 10, &native_display_customer_srgb_mode);
+	if (ret) {
+		pr_err("kstrtoint failed. ret=%d\n", ret);
+		return ret;
+	}
+
+	ret = dsi_display_set_customer_srgb_mode(connector, native_display_customer_srgb_mode);
+	if (ret) {
+		pr_err("set customer srgb  mode(%d) fail\n", native_display_customer_srgb_mode);
+	}
+	return count;
+}
+
+static ssize_t native_display_customer_srgb_mode_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct drm_connector *connector = to_drm_connector(dev);
+	int ret = 0;
+	int native_display_customer_srgb_mode = 0;
+
+	native_display_customer_srgb_mode = dsi_display_get_customer_srgb_mode(connector);
+
+        ret = scnprintf(buf, PAGE_SIZE, "%d\n", native_display_customer_srgb_mode);
+
+	return ret;
+}
+
+
+static ssize_t native_display_wide_color_mode_store(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct drm_connector *connector = to_drm_connector(dev);
+	int ret = 0;
+	int native_display_wide_color_mode = 0;
+
+	ret = kstrtoint(buf, 10, &native_display_wide_color_mode);
+	if (ret) {
+		pr_err("kstrtoint failed. ret=%d\n", ret);
+		return ret;
+	}
+
+	ret = dsi_display_set_native_display_wide_color_mode(connector, native_display_wide_color_mode);
+	if (ret) {
+		pr_err("set native_display_p3  mode(%d) fail\n", native_display_wide_color_mode);
+	}
+	return count;
+}
+
+static ssize_t native_display_srgb_color_mode_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	struct drm_connector *connector = to_drm_connector(dev);
+	int ret = 0;
+	int native_display_srgb_color_mode = 0;
+
+	native_display_srgb_color_mode = dsi_display_get_native_display_srgb_color_mode(connector);
+
+        ret = scnprintf(buf, PAGE_SIZE, "%d\n", native_display_srgb_color_mode);
+
+	return ret;
+}
+
+static ssize_t native_display_srgb_color_mode_store(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct drm_connector *connector = to_drm_connector(dev);
+	int ret = 0;
+	int native_display_srgb_color_mode = 0;
+
+	ret = kstrtoint(buf, 10, &native_display_srgb_color_mode);
+	if (ret) {
+		pr_err("kstrtoint failed. ret=%d\n", ret);
+		return ret;
+	}
+
+	ret = dsi_display_set_native_display_srgb_color_mode(connector, native_display_srgb_color_mode);
+	if (ret) {
+		pr_err("set native_display_srgb  mode(%d) fail\n", native_display_srgb_color_mode);
+	}
+	return count;
+}
 /******************************************************************/
 static DEVICE_ATTR_RW(status);
 static DEVICE_ATTR_RO(enabled);
 static DEVICE_ATTR_RO(dpms);
 static DEVICE_ATTR_RO(modes);
+static DEVICE_ATTR_RW(acl);
 static DEVICE_ATTR_RW(hbm);
 static DEVICE_ATTR_RW(op_friginer_print_hbm);
 static DEVICE_ATTR_RW(aod);
+static DEVICE_ATTR_RW(aod_disable);
+static DEVICE_ATTR_RW(native_display_p3_mode);
+static DEVICE_ATTR_RW(native_display_wide_color_mode);
+static DEVICE_ATTR_RW(native_display_srgb_color_mode);
+static DEVICE_ATTR_RW(native_display_customer_p3_mode);
+static DEVICE_ATTR_RW(native_display_customer_srgb_mode);
 static DEVICE_ATTR_RW(dsi_panel_command);
 static DEVICE_ATTR_RW(dsi_seed_command);
 
 static DEVICE_ATTR_RO(panel_serial_number);
 static DEVICE_ATTR_RW(dynamic_dsitiming);
 static DEVICE_ATTR_RO(panel_mismatch);
+static DEVICE_ATTR_RW(aod_test);
 static DEVICE_ATTR(dim_alpha, S_IRUGO|S_IWUSR, oneplus_display_get_dim_alpha,
 	oneplus_display_set_dim_alpha);
 static DEVICE_ATTR(force_screenfp, S_IRUGO|S_IWUSR,
@@ -613,14 +891,22 @@ static struct attribute *connector_dev_attrs[] = {
 	&dev_attr_enabled.attr,
 	&dev_attr_dpms.attr,
 	&dev_attr_modes.attr,
+	&dev_attr_acl.attr,
 	&dev_attr_hbm.attr,
 	&dev_attr_op_friginer_print_hbm.attr,
 	&dev_attr_aod.attr,
+	&dev_attr_aod_disable.attr,
+	&dev_attr_native_display_p3_mode.attr,
+	&dev_attr_native_display_wide_color_mode.attr,
+	&dev_attr_native_display_srgb_color_mode.attr,
+	&dev_attr_native_display_customer_p3_mode.attr,
+	&dev_attr_native_display_customer_srgb_mode.attr,
 	&dev_attr_dsi_panel_command.attr,
 	&dev_attr_dsi_seed_command.attr,
 	&dev_attr_panel_serial_number.attr,
 	&dev_attr_dynamic_dsitiming.attr,
 	&dev_attr_panel_mismatch.attr,
+	&dev_attr_aod_test.attr,
 	&dev_attr_force_screenfp.attr,
 	&dev_attr_dim_alpha.attr,
 	&dev_attr_notify_fppress.attr,

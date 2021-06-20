@@ -1612,6 +1612,7 @@ const char *cmd_set_prop_map[DSI_CMD_SET_MAX] = {
 	"ROI not parsed from DTSI, generated dynamically",
 	"qcom,mdss-dsi-timing-switch-command",
 	"qcom,mdss-dsi-post-mode-switch-on-command",
+	"qcom,mdss-dsi-panel-acl-command",
 	"qcom,mdss-dsi-panel-hbm-on-command",//464
 	"qcom,mdss-dsi-panel-hbm-on-command-2",//498
 	"qcom,mdss-dsi-panel-hbm-on-command-3",//532
@@ -1623,6 +1624,10 @@ const char *cmd_set_prop_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-panel-aod-on-command-3",//10-hlpm
 	"qcom,mdss-dsi-panel-aod-on-command-4",//50
 	"qcom,mdss-dsi-panel-aod-off-command",
+	"qcom,mdss-dsi-panel-aod-mode-command-1",
+	"qcom,mdss-dsi-panel-aod-mode-command-2",
+	"qcom,mdss-dsi-panel-aod-mode-command-3",
+	"qcom,mdss-dsi-panel-aod-mode-command-4",
 	"qcom,mdss-dsi-panel-serial-num-command",
 	"qcom,mdss-dsi-panel-id-command",
 	"qcom,mdss-dsi-panel-read-register-open-command",
@@ -1640,6 +1645,16 @@ const char *cmd_set_prop_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-panel-hbm-off-aod-on-command",
 	"qcom,mdss-dsi-panel-aod-off-samsung-command",
 	"qcom,mdss-dsi-panel-aod-off-new-command",
+    "qcom,mdss-dsi-panel-display-p3-mode-on-command",
+	"qcom,mdss-dsi-panel-display-p3-mode-off-command",
+	"qcom,mdss-dsi-panel-display-wide-color-mode-on-command",
+	"qcom,mdss-dsi-panel-display-wide-color-mode-off-command",
+	"qcom,mdss-dsi-panel-display-srgb-color-mode-on-command",
+	"qcom,mdss-dsi-panel-display-srgb-color-mode-off-command",
+	"qcom,mdss-dsi-customer-srgb-enable-command",
+	"qcom,mdss-dsi-customer-srgb-disable-command",
+	"qcom,mdss-dsi-customer-p3-enable-command",
+	"qcom,mdss-dsi-customer-p3-disable-command",
 	"qcom,mdss-dsi-panel-command",
 	"qcom,mdss-dsi-seed-command",
 	"qcom,mdss-dsi-panel-hbm-off-command",
@@ -1676,6 +1691,7 @@ const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
 	"ROI not parsed from DTSI, generated dynamically",
 	"qcom,mdss-dsi-timing-switch-command-state",
 	"qcom,mdss-dsi-post-mode-switch-on-command-state",
+	"qcom,mdss-dsi-acl-command-state",
 	"qcom,mdss-dsi-hbm-on-command-state",//464
 	"qcom,mdss-dsi-hbm-on-command-state",//498
 	"qcom,mdss-dsi-hbm-on-command-state",//532
@@ -1687,6 +1703,10 @@ const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-aod-on-command-state",// 3
 	"qcom,mdss-dsi-aod-on-command-state",// 4
 	"qcom,mdss-dsi-aod-off-command-state",//off
+	"qcom,mdss-dsi-aod-mode-command-state",//10nit
+	"qcom,mdss-dsi-aod-mode-command-state",//50nit
+	"qcom,mdss-dsi-aod-mode-command-state",//10nit
+	"qcom,mdss-dsi-aod-mode-command-state",//50nit
 	"qcom,mdss-dsi-panel-serial-num-command-state",
 	"qcom,mdss-dsi-panel-id-command-state",
 	"qcom,mdss-dsi-panel-read-register-open-command-state",
@@ -1704,6 +1724,16 @@ const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
 	"qcom,mdss-dsi-panel-hbm-off-aod-on-command-state",
 	"qcom,mdss-dsi-panel-aod-off-samsung-command-state",
 	"qcom,mdss-dsi-panel-aod-off-new-command-state",
+	"qcom,mdss-dsi-panel-display-p3-mode-on-command-state",
+	"qcom,mdss-dsi-panel-display-p3-mode-off-command-state",
+	"qcom,mdss-dsi-panel-display-wide-color-mode-on-command-state",
+	"qcom,mdss-dsi-panel-display-wide-color-mode-off-command-state",
+	"qcom,mdss-dsi-panel-display-srgb-color-mode-on-command-state",
+	"qcom,mdss-dsi-panel-display-srgb-color-mode-off-command-state",
+	"qcom,mdss-dsi-customer-srgb-enable-command-state",
+	"qcom,mdss-dsi-customer-srgb-disable-command-state",
+	"qcom,mdss-dsi-customer-p3-enable-command-state",
+	"qcom,mdss-dsi-customer-p3-disable-command-state",
 	"qcom,mdss-dsi-panel-command-state",
 	"qcom,mdss-dsi-seed-command-state",
 	"qcom,mdss-dsi-hbm-off-command-state",
@@ -2927,6 +2957,15 @@ static int dsi_panel_parse_oem_config(struct dsi_panel *panel,
 		pr_debug("bl_high2bit:%d\n", panel->bl_config.bl_high2bit);
 	}
 
+	tmp = 0;
+	rc = of_property_read_u32(of_node, "qcom,mdss-dsi-acl-cmd-index", &tmp);
+	panel->acl_cmd_index = (!rc ? tmp : 0);
+
+	tmp = 0;
+	rc = of_property_read_u32(of_node, "qcom,mdss-dsi-acl-mode-index",
+					&tmp);
+	panel->acl_mode_index = (!rc ? tmp : 0);
+
 	rc = of_property_read_u32(of_node,
 			 "qcom,mdss-dsi-panel-seria-num-year-index", &tmp);
 	panel->panel_year_index = (!rc ? tmp : 0);
@@ -4044,6 +4083,26 @@ int dsi_panel_enable(struct dsi_panel *panel)
 		rc = dsi_panel_set_aod_mode(panel, 0);
 		panel->aod_status = 0;
 	}
+/*
+	if (panel->acl_mode)
+		dsi_panel_set_acl_mode(panel, panel->acl_mode);
+
+	if (panel->srgb_mode)
+		dsi_panel_set_srgb_mode(panel, panel->srgb_mode);
+
+	if (panel->dci_p3_mode)
+		dsi_panel_set_dci_p3_mode(panel, panel->dci_p3_mode);
+
+	if (panel->night_mode)
+		dsi_panel_set_night_mode(panel, panel->night_mode);
+
+	if (panel->oneplus_mode)
+		dsi_panel_set_oneplus_mode(panel, panel->oneplus_mode);
+
+	if (panel->adaption_mode)
+		dsi_panel_set_adaption_mode(panel, panel->adaption_mode);
+
+*/	
 
         if (panel->hbm_los_mode)
 	    dsi_panel_apply_hbm_mode(panel);
@@ -4230,6 +4289,43 @@ error:
 	return rc;
 }
 
+int dsi_panel_set_acl_mode(struct dsi_panel *panel, int level)
+{
+	int rc = 0;
+	u32 count;
+	struct dsi_cmd_desc *cmds;
+	struct dsi_display_mode *mode;
+	u8 *tx = NULL;
+
+	if (!panel || !panel->cur_mode) {
+		pr_err("Invalid params\n");
+		return -EINVAL;
+	}
+	mutex_lock(&panel->panel_lock);
+
+	mode = panel->cur_mode;
+
+	count = mode->priv_info->cmd_sets[DSI_CMD_SET_ACL_MODE].count;
+	cmds = mode->priv_info->cmd_sets[DSI_CMD_SET_ACL_MODE].cmds;
+
+	if (count == 0) {
+		pr_err("This panel does not support acl mode\n");
+		goto error;
+	}
+
+	tx = (u8 *)cmds[panel->acl_cmd_index].msg.tx_buf;
+	if (tx != NULL)
+		tx[panel->acl_mode_index] = level;
+
+	rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_ACL_MODE);
+	pr_debug("Set ACL Mode = %d\n", level);
+
+error:
+	mutex_unlock(&panel->panel_lock);
+
+	return rc;
+}
+
 int dsi_panel_set_hbm_mode(struct dsi_panel *panel, int level)
 {
 	int rc = 0;
@@ -4374,6 +4470,148 @@ error:
 
 	return rc;
 }
+
+int dsi_panel_set_native_display_p3_mode(struct dsi_panel *panel, int level)
+{
+	int rc = 0;
+	u32 count;
+    struct dsi_display_mode *mode;
+
+	if (!panel || !panel->cur_mode) {
+		pr_err("Invalid params\n");
+		return -EINVAL;
+	}
+    mode = panel->cur_mode;
+	mutex_lock(&panel->panel_lock);
+
+    if (level) {
+        count = mode->priv_info->cmd_sets[DSI_CMD_SET_NATIVE_DISPLAY_P3_ON].count;
+
+            rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_P3_ON);
+            pr_debug("Native Display p3 Mode On.\n");    
+    } else {
+        count = mode->priv_info->cmd_sets[DSI_CMD_SET_NATIVE_DISPLAY_P3_OFF].count;
+
+            rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_P3_OFF);
+            pr_debug("Native Display p3 Mode Off.\n");
+    }
+	mutex_unlock(&panel->panel_lock);
+return rc;
+}
+
+int dsi_panel_set_native_display_wide_color_mode(struct dsi_panel *panel, int level)
+{
+	int rc = 0;
+	u32 count;
+    struct dsi_display_mode *mode;
+
+	if (!panel || !panel->cur_mode) {
+		pr_err("Invalid params\n");
+		return -EINVAL;
+	}
+    mode = panel->cur_mode;
+	mutex_lock(&panel->panel_lock);
+
+    if (level) {
+        count = mode->priv_info->cmd_sets[DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_ON].count;
+
+            rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_ON);
+            pr_debug("Native wide color Mode On.\n");    
+    } else {
+        count = mode->priv_info->cmd_sets[DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_OFF].count;
+
+            rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_OFF);
+            pr_debug("Native wide color Mode Off.\n");
+    }
+	mutex_unlock(&panel->panel_lock);
+return rc;
+}
+
+int dsi_panel_set_native_display_srgb_color_mode(struct dsi_panel *panel, int level)
+{
+	int rc = 0;
+	u32 count;
+    struct dsi_display_mode *mode;
+
+	if (!panel || !panel->cur_mode) {
+		pr_err("Invalid params\n");
+		return -EINVAL;
+	}
+    mode = panel->cur_mode;
+	mutex_lock(&panel->panel_lock);
+
+    if (level) {
+        count = mode->priv_info->cmd_sets[DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON].count;
+
+            rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON);
+            pr_debug("Native srgb color Mode On.\n");    
+    } else {
+        count = mode->priv_info->cmd_sets[DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_OFF].count;
+
+            rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_OFF);
+            pr_debug("Native  srgb color Mode Off.\n");
+    }
+	mutex_unlock(&panel->panel_lock);
+return rc;
+}
+
+int dsi_panel_set_customer_srgb_mode(struct dsi_panel *panel, int level)
+{
+	int rc = 0;
+	u32 count;
+    struct dsi_display_mode *mode;
+
+	if (!panel || !panel->cur_mode) {
+		pr_err("Invalid params\n");
+		return -EINVAL;
+	}
+    mode = panel->cur_mode;
+	mutex_lock(&panel->panel_lock);
+
+    if (level) {
+        count = mode->priv_info->cmd_sets[DSI_CMD_LOADING_CUSTOMER_RGB_ON].count;
+
+            rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_RGB_ON);
+            pr_debug("turn on customer srgb\n");    
+    } else {
+        count = mode->priv_info->cmd_sets[DSI_CMD_LOADING_CUSTOMER_RGB_OFF].count;
+
+            rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_RGB_OFF);
+            pr_debug("turn off customer srgb\n");
+    }
+	mutex_unlock(&panel->panel_lock);
+return rc;
+}
+
+int dsi_panel_set_customer_p3_mode(struct dsi_panel *panel, int level)
+{
+	int rc = 0;
+	u32 count;
+    struct dsi_display_mode *mode;
+
+	if (!panel || !panel->cur_mode) {
+		pr_err("Invalid params\n");
+		return -EINVAL;
+	}
+    mode = panel->cur_mode;
+	mutex_lock(&panel->panel_lock);
+
+    if (level) {
+        count = mode->priv_info->cmd_sets[DSI_CMD_LOADING_CUSTOMER_P3_ON].count;
+
+            rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_ON);
+            pr_debug("turn on customer P3\n");    
+    } else {
+        count = mode->priv_info->cmd_sets[DSI_CMD_LOADING_CUSTOMER_P3_OFF].count;
+
+            rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_OFF);
+            pr_debug("turn off customer P3\n");
+    }
+	mutex_unlock(&panel->panel_lock);
+return rc;
+}
+
+
 
 bool aod_real_flag;
 bool aod_complete;
