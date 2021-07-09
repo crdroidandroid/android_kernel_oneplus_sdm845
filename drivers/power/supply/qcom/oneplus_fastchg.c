@@ -236,7 +236,7 @@ void usb_sw_gpio_set(int value)
 	}
 	fastchg_di->fast_chg_allow = value;
 	/* david@bsp add log */
-	pr_info("get usb_sw_gpio=%d&%d\n"
+	pr_debug("get usb_sw_gpio=%d&%d\n"
 		, gpio_get_value(fastchg_di->usb_sw_1_gpio)
 		, gpio_get_value(fastchg_di->usb_sw_2_gpio));
 }
@@ -364,7 +364,7 @@ static bool dashchg_fw_check(void)
 		}
 		/* compare recv_buf with dashchg_firmware_data[] end */
 	}
-	pr_info("result=success\n");
+	pr_debug("result=success\n");
 	return FW_CHECK_SUCCESS;
 i2c_err:
 	pr_err("result=fail\n");
@@ -426,7 +426,7 @@ static void reset_mcu_and_request_irq(struct fastchg_device_info *di)
 {
 	int ret;
 
-	pr_info("\n");
+	pr_debug("\n");
 	gpio_direction_output(di->ap_clk, 1);
 	usleep_range(10000, 10001);
 	gpio_direction_output(di->mcu_en_gpio, 1);
@@ -472,7 +472,8 @@ static void dashchg_fw_update(struct work_struct *work)
 		reset_mcu_and_request_irq(di);
 		__pm_relax(&di->fastchg_update_fireware_lock);
 		set_property_on_smbcharger(POWER_SUPPLY_PROP_SWITCH_DASH, true);
-		pr_info("FW check success\n"); /* david@bsp add log */
+		/* david@bsp add log */
+		pr_debug("FW check success\n");
 		return;
 	}
 	pr_info("start erasing data.......\n");
@@ -1077,7 +1078,7 @@ static long  dash_dev_ioctl(struct file *filp, unsigned int cmd,
 				mod_timer(&di->watchdog,
 				jiffies + msecs_to_jiffies(15000));
 			} else if (arg == DASH_NOTIFY_FAST_PRESENT + 2) {
-				pr_err("REJECT_DATA\n");
+				pr_debug("REJECT_DATA\n");
 				dash_write(di, REJECT_DATA);
 			} else if (arg == DASH_NOTIFY_FAST_PRESENT + 3) {
 				notify_check_usb_suspend(false, false);
@@ -1095,7 +1096,7 @@ static long  dash_dev_ioctl(struct file *filp, unsigned int cmd,
 				di->fast_normal_to_warm = false;
 				di->fast_chg_ing = false;
 				di->dash_enhance = 0;
-				pr_err("fastchg stop unexpectly, switch off fastchg\n");
+				pr_debug("fastchg stop unexpectly, switch off fastchg\n");
 				switch_mode_to_normal();
 				del_timer(&di->watchdog);
 				dash_write(di, REJECT_DATA);
@@ -1252,7 +1253,7 @@ static ssize_t dash_dev_write(struct file *filp, const char __user *buf,
 	}
 	schedule_delayed_work(&di->update_fireware_version_work,
 			msecs_to_jiffies(SHOW_FW_VERSION_DELAY_MS));
-	pr_info("fw_ver_count=%d\n", di->dashchg_fw_ver_count);
+	pr_debug("fw_ver_count=%d\n", di->dashchg_fw_ver_count);
 	return count;
 }
 
@@ -1426,7 +1427,7 @@ static void check_n76e_support(struct fastchg_device_info *di)
 		init_n76e_exist_node();
 		pr_info("n76e exist\n");
 	} else {
-		pr_info("n76e not exist\n");
+		pr_debug("n76e not exist\n");
 	}
 
 }
@@ -1494,7 +1495,7 @@ static int dash_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	struct fastchg_device_info *di;
 	int ret;
 
-	pr_info("dash_probe\n");
+	pr_debug("dash_probe\n");
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
 		pr_err("i2c_func error\n");
 		goto err_check_functionality_failed;
@@ -1556,7 +1557,7 @@ static int dash_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	check_n76e_support(di);
 	check_enhance_support(di);
 	fastcharge_information_register(&fastcharge_information);
-	pr_info("dash_probe success\n");
+	pr_debug("dash_probe success\n");
 
 	return 0;
 
