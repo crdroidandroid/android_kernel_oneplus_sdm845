@@ -234,6 +234,7 @@ void usb_sw_gpio_set(int value)
 		gpio_direction_output(fastchg_di->usb_sw_2_gpio, 0);
 	}
 	fastchg_di->fast_chg_allow = value;
+	/* david@bsp add log */
 	pr_debug("get usb_sw_gpio=%d&%d\n"
 		, gpio_get_value(fastchg_di->usb_sw_1_gpio)
 		, gpio_get_value(fastchg_di->usb_sw_2_gpio));
@@ -469,6 +470,7 @@ static void dashchg_fw_update(struct work_struct *work)
 		reset_mcu_and_request_irq(di);
 		__pm_relax(&di->fastchg_update_fireware_lock);
 		set_property_on_smbcharger(POWER_SUPPLY_PROP_SWITCH_DASH, true);
+		/* david@bsp add log */
 		pr_debug("FW check success\n");
 		return;
 	}

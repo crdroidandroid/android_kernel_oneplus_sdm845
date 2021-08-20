@@ -1273,6 +1273,7 @@ static int smb2_batt_get_prop(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_OP_DISABLE_CHARGE:
 		val->intval = chg->chg_disabled;
 		break;
+/* david.liu@bsp, 20171023 Battery & Charging porting */
 	case POWER_SUPPLY_PROP_CHARGE_NOW:
 		rc = smblib_get_prop_usb_voltage_now(chg, val);
 		break;
@@ -1948,6 +1949,7 @@ static int smb2_init_hw(struct smb2 *chip)
 				&chg->default_icl_ua);
 	if (chip->dt.usb_icl_ua < 0)
 		chip->dt.usb_icl_ua = chg->default_icl_ua;
+/* david.liu@bsp, 20171023 Battery & Charging porting */
 	pr_debug("vbat_max=%d, ibat_max=%d, iusb_max=%d\n",
 		chg->batt_profile_fv_uv,
 		chg->batt_profile_fcc_ua, chip->dt.usb_icl_ua);
@@ -2417,6 +2419,7 @@ static int smb2_chg_config_init(struct smb2 *chip)
 		return -EINVAL;
 	}
 
+/* david.liu@bsp, 20170317 Improve coldboot time */
 	pr_debug("PMI8998 Revision=0x%x\n", pmic_rev_id->rev4);
 	return 0;
 }

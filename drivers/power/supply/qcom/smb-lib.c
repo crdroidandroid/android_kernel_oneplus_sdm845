@@ -495,6 +495,7 @@ int smblib_set_usb_suspend(struct smb_charger *chg, bool suspend)
 int smblib_set_dc_suspend(struct smb_charger *chg, bool suspend)
 {
 	int rc = 0;
+/* Yangfb@bsp support ec4016 wipower */
 	pr_debug("%d\n", suspend);
 	rc = smblib_masked_write(chg, DCIN_CMD_IL_REG, DCIN_SUSPEND_BIT,
 				 suspend ? DCIN_SUSPEND_BIT : 0);
@@ -615,6 +616,20 @@ int smblib_force_ufp(struct smb_charger *chg)
 	}
 
 	return 0;
+}
+
+int smblib_get_prop_from_bms(struct smb_charger *chg,
+				enum power_supply_property psp,
+				union power_supply_propval *val)
+{
+	int rc;
+
+	if (!chg->bms_psy)
+		return -EINVAL;
+
+	rc = power_supply_get_property(chg->bms_psy, psp, val);
+
+	return rc;
 }
 
 static int smblib_request_dpdm(struct smb_charger *chg, bool enable)
@@ -1394,6 +1409,7 @@ static int smblib_dc_icl_vote_callback(struct votable *votable, void *data,
 	struct smb_charger *chg = data;
 	int rc = 0;
 	bool suspend;
+/* Yangfb@bsp support ec4016 wipower */
 	pr_debug("dc icl set %d\n", icl_ua);
 	if (icl_ua < 0) {
 		smblib_dbg(chg, PR_MISC, "No Voter hence suspending\n");
@@ -1453,6 +1469,7 @@ static int smblib_chg_disable_vote_callback(struct votable *votable, void *data,
 	struct smb_charger *chg = data;
 	int rc;
 
+/* david.liu@bsp, 20171023 Battery & Charging porting */
 	pr_debug("set chg_disable=%d\n", chg_disable);
 	rc = smblib_masked_write(chg, CHARGING_ENABLE_CMD_REG,
 				 CHARGING_ENABLE_CMD_BIT,
@@ -2212,20 +2229,6 @@ int smblib_get_prop_charge_qnovo_enable(struct smb_charger *chg,
 
 	val->intval = (bool)(stat & QNOVO_PT_ENABLE_CMD_BIT);
 	return 0;
-}
-
-int smblib_get_prop_from_bms(struct smb_charger *chg,
-				enum power_supply_property psp,
-				union power_supply_propval *val)
-{
-	int rc;
-
-	if (!chg->bms_psy)
-		return -EINVAL;
-
-	rc = power_supply_get_property(chg->bms_psy, psp, val);
-
-	return rc;
 }
 
 /***********************
@@ -3113,6 +3116,7 @@ int smblib_set_prop_sdp_current_max(struct smb_charger *chg,
 
 	rc = 0;
 
+/* david.liu@bsp, 20171023 Battery & Charging porting */
 	pr_debug("set usb current_max=%d\n", val->intval);
 	if (!chg->pd_active) {
 		rc = smblib_handle_usb_current(chg, val->intval);
