@@ -62,10 +62,8 @@
 #include <linux/input/mt.h>
 
 #include "synaptics_redremote.h"
-#include <linux/project_info.h>
 #include "synaptics_baseline.h"
 #include "synaptics_dsx_core.h"
-#include <linux/oneplus/boot_mode.h>
 #include <linux/pm_qos.h>
 /*------------------------------------------------Global Define--------------------------------------------*/
 
@@ -2626,7 +2624,7 @@ static ssize_t synaptics_rmi4_baseline_show_s3508(struct device *dev, char *buf,
      CURRENT_FIRMWARE_ID = (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
      TPD_ERR("[sk]CURRENT_FIRMWARE_ID = 0x%x\n", CURRENT_FIRMWARE_ID);
 	sprintf(ts->fw_id,"0x%x",CURRENT_FIRMWARE_ID);
-	push_component_info(TP, ts->fw_id, ts->manu_name);
+	//push_component_info(TP, ts->fw_id, ts->manu_name);
 READDATA_AGAIN:
 	msleep(30);
 	mutex_lock(&ts->mutex);
@@ -3037,7 +3035,7 @@ static ssize_t synaptics_rmi4_baseline_show_s3706(
 	TPD_ERR("[sk]CURRENT_FIRMWARE_ID = 0x%lx\n",
 			CURRENT_FIRMWARE_ID);
 	snprintf(ts->fw_id, 20, "0x%lx", CURRENT_FIRMWARE_ID);
-	push_component_info(TP, ts->fw_id, ts->manu_name);
+	//push_component_info(TP, ts->fw_id, ts->manu_name);
 READDATA_AGAIN:
 	msleep(30);
 	mutex_lock(&ts->mutex);
@@ -3801,17 +3799,6 @@ static ssize_t synaptics_update_fw_store(struct device *dev,
 	struct synaptics_ts_data *ts = dev_get_drvdata(dev);
 	unsigned long val;
 	int rc;
-
-	int bootmode;
-
-	bootmode = get_boot_mode();
-	TPD_ERR("synaptics bootmode %d  !\n", bootmode);
-	if ((bootmode == MSM_BOOT_MODE__FACTORY)
-		|| (bootmode == MSM_BOOT_MODE__RF)
-		|| (bootmode == MSM_BOOT_MODE__WLAN)) {
-		TPD_ERR("synaptics disable tp update firmware update\n");
-		return size;
-	}
 
 	if (ts->is_suspended && ts->support_hw_poweroff){
 		TPD_ERR("power off firmware abort!\n");
@@ -5887,8 +5874,8 @@ static int synaptics_ts_probe(struct i2c_client *client, const struct i2c_device
 	TP_FW = CURRENT_FIRMWARE_ID;
 	snprintf(ts->fw_id,  20, "0x%lx", TP_FW);
 
-	push_component_info(TOUCH_KEY, ts->fw_id, ts->manu_name);
-	push_component_info(TP, ts->fw_id, ts->manu_name);
+	//push_component_info(TOUCH_KEY, ts->fw_id, ts->manu_name);
+	//push_component_info(TP, ts->fw_id, ts->manu_name);
 
 	synaptics_wq = create_singlethread_workqueue("synaptics_wq");
 	if( !synaptics_wq ){
@@ -6044,16 +6031,6 @@ static int synaptics_ts_probe(struct i2c_client *client, const struct i2c_device
 #endif
 	init_synaptics_proc(ts);
 	TPDTM_DMESG("synaptics_ts_probe 3203: normal end\n");
-
-	bootmode = get_boot_mode();
-	TPD_ERR("synaptics bootmode %d  !\n", bootmode);
-	if ((bootmode == MSM_BOOT_MODE__FACTORY)
-		|| (bootmode == MSM_BOOT_MODE__RF)
-		|| (bootmode == MSM_BOOT_MODE__WLAN)) {
-		touch_disable(ts);
-		TPD_ERR("synaptics ftm mode disable int \n");
-		return 0;
-	}
 
 	return 0;
 
