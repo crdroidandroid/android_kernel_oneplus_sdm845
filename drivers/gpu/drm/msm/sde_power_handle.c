@@ -441,10 +441,8 @@ static int _sde_power_data_bus_set_quota(
 	pdbus->curr_bw_uc_idx = new_uc_idx;
 	pdbus->ao_bw_uc_idx = new_uc_idx;
 
-	SDE_ATRACE_BEGIN("msm_bus_scale_req");
 	rc = msm_bus_scale_client_update_request(pdbus->data_bus_hdl,
 			new_uc_idx);
-	SDE_ATRACE_END("msm_bus_scale_req");
 
 	return rc;
 }

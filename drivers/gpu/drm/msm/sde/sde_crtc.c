@@ -2573,9 +2573,7 @@ static void _sde_crtc_retire_event(struct drm_connector *connector,
 		return;
 	}
 
-	SDE_ATRACE_BEGIN("signal_retire_fence");
 	sde_connector_complete_commit(connector, ts, is_error);
-	SDE_ATRACE_END("signal_retire_fence");
 }
 
 static void sde_crtc_frame_event_work(struct kthread_work *work)
@@ -2608,7 +2606,6 @@ static void sde_crtc_frame_event_work(struct kthread_work *work)
 		return;
 	}
 	priv = sde_kms->dev->dev_private;
-	SDE_ATRACE_BEGIN("crtc_frame_event");
 
 	SDE_DEBUG("crtc%d event:%u ts:%lld\n", crtc->base.id, fevent->event,
 			ktime_to_ns(fevent->ts));
@@ -2643,11 +2640,9 @@ static void sde_crtc_frame_event_work(struct kthread_work *work)
 	}
 
 	if (fevent->event & SDE_ENCODER_FRAME_EVENT_SIGNAL_RELEASE_FENCE) {
-		SDE_ATRACE_BEGIN("signal_release_fence");
 		sde_fence_signal(&sde_crtc->output_fence, fevent->ts,
 				(fevent->event & SDE_ENCODER_FRAME_EVENT_ERROR)
 				? SDE_FENCE_SIGNAL_ERROR : SDE_FENCE_SIGNAL);
-		SDE_ATRACE_END("signal_release_fence");
 	}
 
 	if (fevent->event & SDE_ENCODER_FRAME_EVENT_SIGNAL_RETIRE_FENCE)
@@ -2663,7 +2658,6 @@ static void sde_crtc_frame_event_work(struct kthread_work *work)
 	spin_lock_irqsave(&sde_crtc->spin_lock, flags);
 	list_add_tail(&fevent->list, &sde_crtc->frame_event_list);
 	spin_unlock_irqrestore(&sde_crtc->spin_lock, flags);
-	SDE_ATRACE_END("crtc_frame_event");
 }
 
 extern int msm_drm_notifier_call_chain(unsigned long val, void *v);
@@ -3541,7 +3535,6 @@ static void _sde_crtc_wait_for_fences(struct drm_crtc *crtc)
 	 * if its fence has timed out. Call input fence wait multiple times if
 	 * fence wait is interrupted due to interrupt call.
 	 */
-	SDE_ATRACE_BEGIN("plane_wait_input_fence");
 	drm_atomic_crtc_for_each_plane(plane, crtc) {
 		do {
 			kt_wait = ktime_sub(kt_end, ktime_get());
@@ -3553,7 +3546,6 @@ static void _sde_crtc_wait_for_fences(struct drm_crtc *crtc)
 			rc = sde_plane_wait_input_fence(plane, wait_ms);
 		} while (wait_ms && rc == -ERESTARTSYS);
 	}
-	SDE_ATRACE_END("plane_wait_input_fence");
 }
 
 static void _sde_crtc_setup_mixer_for_encoder(
@@ -4015,7 +4007,6 @@ static int _sde_crtc_commit_kickoff_rot(struct drm_crtc *crtc,
 		cstate->sbuf_cfg.rot_op_mode == SDE_CTL_ROT_OP_MODE_OFFLINE)
 		return 0;
 
-	SDE_ATRACE_BEGIN("crtc_kickoff_rot");
 
 	if (cstate->sbuf_cfg.rot_op_mode != SDE_CTL_ROT_OP_MODE_OFFLINE &&
 			sde_crtc->sbuf_flush_mask_delta) {
@@ -4064,7 +4055,6 @@ static int _sde_crtc_commit_kickoff_rot(struct drm_crtc *crtc,
 	/* save this in sde_crtc for next commit cycle */
 	sde_crtc->sbuf_op_mode_old = cstate->sbuf_cfg.rot_op_mode;
 
-	SDE_ATRACE_END("crtc_kickoff_rot");
 	return rc;
 }
 
@@ -4333,7 +4323,6 @@ void sde_crtc_commit_kickoff(struct drm_crtc *crtc,
 	if (unlikely(!sde_crtc->num_mixers))
 		return;
 
-	SDE_ATRACE_BEGIN("crtc_commit");
 
 	is_error = _sde_crtc_prepare_for_kickoff_rot(dev, crtc);
 
@@ -4371,9 +4360,7 @@ void sde_crtc_commit_kickoff(struct drm_crtc *crtc,
 	}
 	sde_crtc->reset_request = reset_req;
 
-	SDE_ATRACE_BEGIN("flush_event_thread");
 	_sde_crtc_flush_event_thread(crtc);
-	SDE_ATRACE_END("flush_event_thread");
 	sde_crtc_calc_fps(sde_crtc);
 
 	if (atomic_inc_return(&sde_crtc->frame_pending) == 1) {
@@ -4422,7 +4409,6 @@ void sde_crtc_commit_kickoff(struct drm_crtc *crtc,
 		spin_unlock_irqrestore(&dev->event_lock, flags);
 	}
 
-	SDE_ATRACE_END("crtc_commit");
 	return;
 }
 
