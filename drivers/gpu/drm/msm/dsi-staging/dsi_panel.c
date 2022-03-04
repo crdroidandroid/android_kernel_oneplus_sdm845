@@ -754,7 +754,7 @@ static int dsi_panel_tx_cmd_set(struct dsi_panel *panel,
 	state = mode->priv_info->cmd_sets[type].state;
 
 	if (count == 0) {
-		pr_err("[%s] No commands to be sent for state(%d)\n",
+		pr_debug("[%s] No commands to be sent for state(%d)\n",
 			 panel->name, type);
 		goto error;
 	}
@@ -864,9 +864,7 @@ static int dsi_panel_led_bl_register(struct dsi_panel *panel,
 }
 #endif
 
-bool HBM_flag;
-
-int dsi_panel_update_backlight(struct dsi_panel *panel,
+static int dsi_panel_update_backlight(struct dsi_panel *panel,
 	u32 bl_lvl)
 {
 	int rc = 0;
@@ -879,14 +877,7 @@ int dsi_panel_update_backlight(struct dsi_panel *panel,
 
 	dsi = &panel->mipi_device;
 
-	if (panel->bl_config.bl_high2bit) {
-		if (HBM_flag == true)
-			return 0;
-
-		rc = mipi_dsi_dcs_set_display_brightness_samsung(dsi, bl_lvl);
-	} else {
-		rc = mipi_dsi_dcs_set_display_brightness(dsi, bl_lvl);
-	}
+	rc = mipi_dsi_dcs_set_display_brightness(dsi, bl_lvl);
 	if (rc < 0)
 		pr_err("failed to update dcs backlight:%d\n", bl_lvl);
 
@@ -907,7 +898,6 @@ int dsi_panel_set_backlight(struct dsi_panel *panel, u32 bl_lvl)
 		led_trigger_event(bl->wled, bl_lvl);
 		break;
 	case DSI_BACKLIGHT_DCS:
-		panel->hbm_backlight = bl_lvl;
 		rc = dsi_panel_update_backlight(panel, bl_lvl);
 		break;
 	default:
@@ -1758,25 +1748,6 @@ const char *cmd_set_prop_map[DSI_CMD_SET_MAX] = {
 	"ROI not parsed from DTSI, generated dynamically",
 	"qcom,mdss-dsi-timing-switch-command",
 	"qcom,mdss-dsi-post-mode-switch-on-command",
-	"qcom,mdss-dsi-panel-hbm-off-command",
-	"qcom,mdss-dsi-panel-hbm-on-command",
-	"qcom,mdss-dsi-panel-hbm-on-command",
-	"qcom,mdss-dsi-panel-hbm-on-command-2",
-	"qcom,mdss-dsi-panel-hbm-on-command-3",
-	"qcom,mdss-dsi-panel-hbm-on-command-4",
-	"qcom,mdss-dsi-panel-hbm-on-command-5",
-	"qcom,mdss-dsi-panel-hbm-max-brightness-command-on",
-	"qcom,mdss-dsi-panel-display-srgb-color-mode-on-command",
-	"qcom,mdss-dsi-panel-display-p3-mode-on-command",
-	"qcom,mdss-dsi-panel-display-wide-color-mode-on-command",
-	"qcom,mdss-dsi-panel-dci-p3-off-command", // also disables SRGB and wide color modes
-	"qcom,mdss-dsi-panel-aod-on-command-1",
-	"qcom,mdss-dsi-panel-aod-on-command-2",
-	"qcom,mdss-dsi-panel-aod-off-command",
-	"qcom,mdss-dsi-panel-aod-off-hbm-on-command",
-	"qcom,mdss-dsi-panel-hbm-off-aod-on-command",
-	"qcom,mdss-dsi-panel-aod-off-samsung-command",
-	"qcom,mdss-dsi-panel-aod-off-new-command",
 };
 
 const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
@@ -1801,25 +1772,6 @@ const char *cmd_set_state_map[DSI_CMD_SET_MAX] = {
 	"ROI not parsed from DTSI, generated dynamically",
 	"qcom,mdss-dsi-timing-switch-command-state",
 	"qcom,mdss-dsi-post-mode-switch-on-command-state",
-	"qcom,mdss-dsi-hbm-off-command-state",
-	"qcom,mdss-dsi-hbm-on-command-state",
-	"qcom,mdss-dsi-hbm-on-command-state",
-	"qcom,mdss-dsi-hbm-on-command-state",
-	"qcom,mdss-dsi-hbm-on-command-state",
-	"qcom,mdss-dsi-hbm-on-command-state",
-	"qcom,mdss-dsi-panel-hbm-max-brightness-command-on-state",
-	"qcom,mdss-dsi-panel-display-srgb-color-mode-on-command-state",
-	"qcom,mdss-dsi-panel-display-p3-mode-on-command-state",
-	"qcom,mdss-dsi-panel-display-wide-color-mode-on-command-state",
-	"qcom,mdss-dsi-panel-dci-p3-off-command-state",
-	"qcom,mdss-dsi-hbm-on-command-state",
-	"qcom,mdss-dsi-aod-on-command-state",
-	"qcom,mdss-dsi-aod-on-command-state",
-	"qcom,mdss-dsi-aod-off-command-state",
-	"qcom,mdss-dsi-panel-aod-off-hbm-on-command-state",
-	"qcom,mdss-dsi-panel-hbm-off-aod-on-command-state",
-	"qcom,mdss-dsi-panel-aod-off-samsung-command-state",
-	"qcom,mdss-dsi-panel-aod-off-new-command-state",
 };
 
 static int dsi_panel_get_cmd_pkt_count(const char *data, u32 length, u32 *cnt)
@@ -3280,22 +3232,6 @@ error:
 	return rc;
 }
 
-static int dsi_panel_parse_oem_config(struct dsi_panel *panel,
-				     struct device_node *of_node)
-{
-	panel->lp11_init = of_property_read_bool(of_node,
-		"qcom,mdss-dsi-lp11-init");
-	if (panel->lp11_init)
-		pr_debug("lp11_init: %d\n", panel->lp11_init);
-
-	panel->bl_config.bl_high2bit = of_property_read_bool(of_node,
-		"qcom,mdss-bl-high2bit");
-	if (panel->bl_config.bl_high2bit)
-		pr_debug("bl_high2bit: %d\n", panel->bl_config.bl_high2bit);
-
-	return 0;
-}
-
 struct dsi_panel *dsi_panel_get(struct device *parent,
 				struct device_node *of_node,
 				int topology_override,
@@ -3394,10 +3330,6 @@ struct dsi_panel *dsi_panel_get(struct device *parent,
 		rc = -ENOTSUPP;
 		goto error;
 	}
-
-	rc = dsi_panel_parse_oem_config(panel, of_node);
-	if (rc)
-		pr_debug("failed to get oem config, rc=%d\n", rc);
 
 	panel->panel_of_node = of_node;
 	drm_panel_init(&panel->drm_panel);
@@ -4126,27 +4058,6 @@ int dsi_panel_enable(struct dsi_panel *panel)
 	}
 	panel->panel_initialized = true;
 	mutex_unlock(&panel->panel_lock);
-
-	dsi_panel_init_display_modes(panel);
-
-	return rc;
-}
-
-int dsi_panel_init_display_modes(struct dsi_panel *panel)
-{
-	int rc;
-
-	if (panel->hbm_mode)
-		dsi_panel_apply_hbm_mode(panel);
-	dsi_panel_apply_display_mode(panel);
-	if (panel->aod_mode == 2) {
-		rc = dsi_panel_set_aod_mode(panel, 2);
-		panel->aod_status = 1;
-	} else if (panel->aod_mode == 0) {
-		rc = dsi_panel_set_aod_mode(panel, 0);
-		panel->aod_status = 0;
-	}
-
 	return rc;
 }
 
@@ -4213,19 +4124,10 @@ int dsi_panel_disable(struct dsi_panel *panel)
 	if (panel->type == EXT_BRIDGE)
 		return 0;
 
-	panel->panel_initialized = false;
-
 	mutex_lock(&panel->panel_lock);
-
-	if (panel->aod_mode == 2)
-		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_AOD_OFF_SAMSUNG);
 
 	/* Avoid sending panel off commands when ESD recovery is underway */
 	if (!atomic_read(&panel->esd_recovery_pending)) {
-		if (panel->aod_mode == 2)
-			panel->aod_status = 1;
-		else if (panel->aod_mode == 0)
-			panel->aod_status = 0;
 		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_OFF);
 		if (rc) {
 			pr_err("[%s] failed to send DSI_CMD_SET_OFF cmds, rc=%d\n",
@@ -4289,116 +4191,4 @@ int dsi_panel_post_unprepare(struct dsi_panel *panel)
 error:
 	mutex_unlock(&panel->panel_lock);
 	return rc;
-}
-
-int dsi_panel_apply_hbm_mode(struct dsi_panel *panel)
-{
-	static const enum dsi_cmd_set_type type_map[] = {
-		DSI_CMD_SET_HBM_OFF,
-		DSI_CMD_SET_HBM_ON_1,
-		DSI_CMD_SET_HBM_ON_2,
-		DSI_CMD_SET_HBM_ON_3,
-		DSI_CMD_SET_HBM_ON_4,
-		DSI_CMD_SET_HBM_ON_5,
-		DSI_CMD_SET_HBM_ON_6,
-	};
-
-	enum dsi_cmd_set_type type;
-	int rc;
-
-	if (panel->hbm_mode >= 0 && panel->hbm_mode < ARRAY_SIZE(type_map))
-		type = type_map[panel->hbm_mode];
-	else
-		type = DSI_CMD_SET_HBM_OFF;
-
-	mutex_lock(&panel->panel_lock);
-	rc = dsi_panel_tx_cmd_set(panel, type);
-	mutex_unlock(&panel->panel_lock);
-
-	return rc;
-}
-
-int dsi_panel_apply_display_mode_locked(struct dsi_panel *panel)
-{
-	enum dsi_cmd_set_type type;
-	int rc;
-
-	switch (panel->display_mode) {
-		case DISPLAY_MODE_SRGB: type = DSI_CMD_SET_MODE_SRGB; break;
-		case DISPLAY_MODE_DCI_P3: type = DSI_CMD_SET_MODE_DCI_P3; break;
-		case DISPLAY_MODE_WIDE_COLOR: type = DSI_CMD_SET_MODE_WIDE_COLOR; break;
-		default: type = DSI_CMD_SET_MODE_DEFAULT; break;
-	}
-
-	rc = dsi_panel_tx_cmd_set(panel, type);
-
-	return rc;
-}
-
-int dsi_panel_apply_display_mode(struct dsi_panel *panel)
-{
-	int rc;
-
-	mutex_lock(&panel->panel_lock);
-	rc = dsi_panel_apply_display_mode_locked(panel);
-	mutex_unlock(&panel->panel_lock);
-
-	return rc;
-}
-
-bool aod_real_flag = false;
-bool aod_complete = false;
-
-int dsi_panel_set_aod_mode(struct dsi_panel *panel, int level)
-{
-	int rc = 0;
-	struct dsi_display_mode *mode;
-	if (!panel || !panel->cur_mode) {
-		pr_err("Invalid params\n");
-		return -EINVAL;
-	}
-	if (panel->aod_disable)
-		return 0;
-	mode = panel->cur_mode;
-	if (level == 1) {
-		if (panel->aod_status == 0) {
-			printk(KERN_ERR "send AOD ON commd mode 1 start \n");
-			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_AOD_ON_1);
-			printk(KERN_ERR "send AOD ON commd mode 1 end \n");
-			panel->aod_status = 1;
-		}
-	} else if (level == 2) {
-		if (panel->aod_status == 0) {
-			panel->aod_status = 1;
-			printk(KERN_ERR "send AOD ON commd mode 2 start \n");
-			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_AOD_ON_2);
-			aod_real_flag = false;
-			aod_complete = true;
-			printk(KERN_ERR "send AOD ON commd mode 2 end   \n");
-
-		}
-	} else {
-		if (panel->aod_status) {
-			panel->aod_status = 0;
-			printk(KERN_ERR "send AOD OFF commd start \n");
-			if (aod_real_flag) {
-				printk(KERN_ERR "send DSI_CMD_SET_AOD_OFF \n");
-				rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_AOD_OFF);
-			}
-			if (!aod_real_flag) {
-				printk(KERN_ERR "send DSI_CMD_SET_AOD_OFF_NEW \n");
-				rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_AOD_OFF_NEW);
-				rc = dsi_panel_update_backlight(panel,panel->bl_config.bl_level);
-			}
-			if (panel->display_mode != DISPLAY_MODE_DEFAULT)
-				dsi_panel_apply_display_mode(panel);
-
-			printk(KERN_ERR "send AOD OFF commd end \n");
-			aod_complete = false;
-		}
-	}
-
-	panel->aod_curr_mode = level;
-	pr_err("AOD MODE = %d\n", level);
-return rc;
 }
