@@ -58,6 +58,7 @@
 #define RMNET_IOCTL_SET_XLAT_DEV_INFO          0x0015   /* xlat dev name   */
 #define RMNET_IOCTL_DEREGISTER_DEV             0x0016   /* Dereg a net dev */
 #define RMNET_IOCTL_GET_SG_SUPPORT             0x0017   /* Query sg support*/
+#define RMNET_IOCTL_DEL_MUX_CHANNEL            0x0019   /* Del MUX ID      */
 
 /* Return values for the RMNET_IOCTL_GET_SUPPORTED_FEATURES IOCTL */
 #define RMNET_IOCTL_FEAT_NOTIFY_MUX_CHANNEL              (1<<0)
