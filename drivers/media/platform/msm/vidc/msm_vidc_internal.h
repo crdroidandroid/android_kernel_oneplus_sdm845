@@ -225,9 +225,17 @@ struct msm_vidc_efuse_data {
 	enum efuse_purpose purpose;
 };
 
+/* Set the specific feature config bit to
+ * enable specific feature via feature_config
+ * hfi packet. Do not change the order of the
+ * configs as it is fixed in the firmware.
+ */
 enum feature_config {
+/* Set 1 to enable Decoder max resolution */
 	MAX_DEC_RESOLUTION = 0x1,
+/* Set 1 to enable Encoder max resolution */
 	MAX_ENC_RESOLUTION = 0x2,
+/* Set 1 to enable Dynamic Decoder crop fix */
 	DEC_DYNAMIC_CROP = 0x4,
 	RESERVED = 0x08,
 };
