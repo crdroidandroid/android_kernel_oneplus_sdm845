@@ -730,6 +730,10 @@ static void super_written(struct bio *bio)
 
 	rdev_dec_pending(rdev, mddev);
 
+	bio_put(bio);
+
+	rdev_dec_pending(rdev, mddev);
+
 	if (atomic_dec_and_test(&mddev->pending_writes))
 		wake_up(&mddev->sb_wait);
 }
