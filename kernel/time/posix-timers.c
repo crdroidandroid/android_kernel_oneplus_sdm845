@@ -1102,6 +1102,7 @@ SYSCALL_DEFINE2(clock_getres, const clockid_t, which_clock,
 static int common_nsleep(const clockid_t which_clock, int flags,
 			 struct timespec *tsave, struct timespec __user *rmtp)
 {
+	current->restart_block.fn = do_no_restart_syscall;
 	return hrtimer_nanosleep(tsave, rmtp, flags & TIMER_ABSTIME ?
 				 HRTIMER_MODE_ABS : HRTIMER_MODE_REL,
 				 which_clock);
