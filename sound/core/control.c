@@ -909,7 +909,6 @@ static int snd_ctl_elem_read(struct snd_card *card,
 	unsigned int index_offset;
 	int result;
 
-	down_read(&card->controls_rwsem);
 	kctl = snd_ctl_find_id(card, &control->id);
 	if (kctl == NULL) {
 		result = -ENOENT;
@@ -923,7 +922,6 @@ static int snd_ctl_elem_read(struct snd_card *card,
 		} else
 			result = -EPERM;
 	}
-	up_read(&card->controls_rwsem);
 	return result;
 }
 
@@ -939,8 +937,11 @@ static int snd_ctl_elem_read_user(struct snd_card *card,
 
 	snd_power_lock(card);
 	result = snd_power_wait(card, SNDRV_CTL_POWER_D0);
-	if (result >= 0)
+	if (result >= 0) {
+		down_read(&card->controls_rwsem);
 		result = snd_ctl_elem_read(card, control);
+		up_read(&card->controls_rwsem);
+	}
 	snd_power_unlock(card);
 	if (result >= 0)
 		if (copy_to_user(_control, control, sizeof(*control)))
@@ -957,7 +958,6 @@ static int snd_ctl_elem_write(struct snd_card *card, struct snd_ctl_file *file,
 	unsigned int index_offset;
 	int result;
 
-	down_read(&card->controls_rwsem);
 	kctl = snd_ctl_find_id(card, &control->id);
 	if (kctl == NULL) {
 		result = -ENOENT;
@@ -974,12 +974,10 @@ static int snd_ctl_elem_write(struct snd_card *card, struct snd_ctl_file *file,
 		}
 		if (result > 0) {
 			struct snd_ctl_elem_id id = control->id;
-			up_read(&card->controls_rwsem);
 			snd_ctl_notify(card, SNDRV_CTL_EVENT_MASK_VALUE, &id);
 			return 0;
 		}
 	}
-	up_read(&card->controls_rwsem);
 	return result;
 }
 
@@ -997,8 +995,11 @@ static int snd_ctl_elem_write_user(struct snd_ctl_file *file,
 	card = file->card;
 	snd_power_lock(card);
 	result = snd_power_wait(card, SNDRV_CTL_POWER_D0);
-	if (result >= 0)
+	if (result >= 0) {
+		down_write(&card->controls_rwsem);
 		result = snd_ctl_elem_write(card, file, control);
+		up_write(&card->controls_rwsem);
+	}
 	snd_power_unlock(card);
 	if (result >= 0)
 		if (copy_to_user(_control, control, sizeof(*control)))
