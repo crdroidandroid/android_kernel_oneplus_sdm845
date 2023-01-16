@@ -889,7 +889,7 @@ int dsi_panel_update_backlight(struct dsi_panel *panel,
 		if (HBM_flag == true)
 			return 0;
 
-		rc = mipi_dsi_dcs_set_display_brightness_samsung(dsi, bl_lvl);
+		rc = mipi_dsi_dcs_set_display_brightness_large(dsi, bl_lvl);
 	} else {
 		rc = mipi_dsi_dcs_set_display_brightness(dsi, bl_lvl);
 	}
