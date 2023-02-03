@@ -3475,6 +3475,7 @@ static void cnss_pci_remove(struct pci_dev *pci_dev)
 	switch (pci_dev->device) {
 	case QCA6290_DEVICE_ID:
 	case QCA6390_DEVICE_ID:
+	case QCN7605_DEVICE_ID:
 		cnss_pci_unregister_mhi(pci_priv);
 		cnss_pci_disable_msi(pci_priv);
 		del_timer(&pci_priv->dev_rddm_timer);

@@ -452,6 +452,11 @@ out:
 	return ret;
 }
 
+static void cnss_utils_debugfs_destroy(struct cnss_utils_priv *priv)
+{
+	debugfs_remove_recursive(priv->root_dentry);
+}
+
 static int __init cnss_utils_init(void)
 {
 	struct cnss_utils_priv *priv = NULL;
@@ -472,6 +477,8 @@ static int __init cnss_utils_init(void)
 
 static void __exit cnss_utils_exit(void)
 {
+	cnss_utils_debugfs_destroy(cnss_utils_priv);
+	mutex_destroy(&cnss_utils_priv->unsafe_channel_list_lock);
 	kfree(cnss_utils_priv);
 	cnss_utils_priv = NULL;
 }
