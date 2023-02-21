@@ -32,6 +32,7 @@
 #include <linux/kasan-checks.h>
 #include <linux/string.h>
 #include <linux/thread_info.h>
+#include <linux/nospec.h>
 
 #include <asm/cpufeature.h>
 #include <asm/kernel-pgtable.h>
@@ -450,6 +451,12 @@ static inline unsigned long __must_check copy_from_user(void *to, const void __u
 	check_object_size(to, n, false);
 
 	if (access_ok(VERIFY_READ, from, n)) {
+		/*
+		* Ensure that bad access_ok() speculation will not
+		* lead to nasty side effects *after* the copy is
+		* finished:
+		*/
+		barrier_nospec();
 		res = __arch_copy_from_user(to, from, n);
 	}
 	if (unlikely(res))

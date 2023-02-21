@@ -13,6 +13,7 @@
  */
 #include <linux/string.h>
 #include <linux/thread_info.h>
+#include <linux/nospec.h>
 #include <asm/errno.h>
 #include <asm/memory.h>
 #include <asm/domain.h>
@@ -611,6 +612,12 @@ copy_from_user(void *to, const void __user *from, unsigned long n)
 	check_object_size(to, n, false);
 
 	if (likely(access_ok(VERIFY_READ, from, n)))
+		/*
+		* Ensure that bad access_ok() speculation will not
+		* lead to nasty side effects *after* the copy is
+		* finished:
+		*/
+		barrier_nospec();
 		res = __arch_copy_from_user(to, from, n);
 	if (unlikely(res))
 		memset(to + (n - res), 0, res);
