@@ -1562,6 +1562,9 @@ out:
 	ext4_write_unlock_xattr(inode, &no_expand);
 	return 0;
 
+	if (ext4_has_inline_data(inode))
+		error = ext4_find_inline_data_nolock(inode);
+
 cleanup:
 	brelse(bh);
 	/*
