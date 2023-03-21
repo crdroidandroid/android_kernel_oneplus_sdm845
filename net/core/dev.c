@@ -2096,6 +2096,8 @@ int netif_set_xps_queue(struct net_device *dev, const struct cpumask *mask,
 	int cpu, numa_node_id = -2;
 	bool active = false;
 
+	WARN_ON_ONCE(index >= dev->num_tx_queues);
+
 	mutex_lock(&xps_map_mutex);
 
 	dev_maps = xmap_dereference(dev->xps_maps);
