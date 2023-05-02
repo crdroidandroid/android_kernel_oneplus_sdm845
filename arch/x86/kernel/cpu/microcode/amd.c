@@ -707,7 +707,7 @@ int apply_microcode_amd(int cpu)
 		return -1;
 
 	/* need to apply patch? */
-	if (rev >= mc_amd->hdr.patch_id)
+	if (rev > mc_amd->hdr.patch_id)
 		goto out;
 
 	if (__apply_microcode_amd(mc_amd)) {
