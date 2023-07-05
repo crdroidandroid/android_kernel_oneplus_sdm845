@@ -1370,7 +1370,7 @@ static void mvneta_defaults_set(struct mvneta_port *pp)
 		 */
 		if (txq_number == 1)
 			txq_map = (cpu == pp->rxq_def) ?
-				MVNETA_CPU_TXQ_ACCESS(1) : 0;
+				MVNETA_CPU_TXQ_ACCESS(0) : 0;
 
 		mvreg_write(pp, MVNETA_CPU_MAP(cpu), rxq_map | txq_map);
 	}
@@ -3303,7 +3303,7 @@ static void mvneta_percpu_elect(struct mvneta_port *pp)
 		 */
 		if (txq_number == 1)
 			txq_map = (cpu == elected_cpu) ?
-				MVNETA_CPU_TXQ_ACCESS(1) : 0;
+				MVNETA_CPU_TXQ_ACCESS(0) : 0;
 		else
 			txq_map = mvreg_read(pp, MVNETA_CPU_MAP(cpu)) &
 				MVNETA_CPU_TXQ_ACCESS_ALL_MASK;
