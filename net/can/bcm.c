@@ -1567,6 +1567,10 @@ static int bcm_release(struct socket *sock)
 
 	lock_sock(sk);
 
+	/* remove procfs entry */
+	if (proc_dir && bo->bcm_proc_read)
+		remove_proc_entry(bo->procname, proc_dir);
+
 	list_for_each_entry_safe(op, next, &bo->tx_ops, list)
 		bcm_remove_op(op);
 
@@ -1601,10 +1605,6 @@ static int bcm_release(struct socket *sock)
 
 	list_for_each_entry_safe(op, next, &bo->rx_ops, list)
 		bcm_remove_op(op);
-
-	/* remove procfs entry */
-	if (proc_dir && bo->bcm_proc_read)
-		remove_proc_entry(bo->procname, proc_dir);
 
 	/* remove device reference */
 	if (bo->bound) {
