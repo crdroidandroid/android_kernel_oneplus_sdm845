@@ -7023,6 +7023,7 @@ int afe_spk_prot_get_calib_data(struct afe_spkr_prot_get_vi_calib *calib_resp)
 {
 	int ret = -EINVAL;
 	int index = 0, port = SLIMBUS_4_TX;
+	uint32_t th_vi_ca_state;
 
 	if (!calib_resp) {
 		pr_err("%s: Invalid params\n", __func__);
@@ -7085,6 +7086,12 @@ int afe_spk_prot_get_calib_data(struct afe_spkr_prot_get_vi_calib *calib_resp)
 			atomic_read(&this_afe.status)));
 		ret = adsp_err_get_lnx_err_code(
 				atomic_read(&this_afe.status));
+		goto fail_cmd;
+	}
+	th_vi_ca_state = this_afe.calib_data.res_cfg.th_vi_ca_state;
+	if (th_vi_ca_state < FBSP_INCORRECT_OP_MODE ||
+		th_vi_ca_state > MAX_FBSP_STATE) {
+		pr_err("%s: invalid fbsp state %d\n", __func__, th_vi_ca_state);
 		goto fail_cmd;
 	}
 	memcpy(&calib_resp->res_cfg, &this_afe.calib_data.res_cfg,
