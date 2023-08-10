@@ -6740,12 +6740,6 @@ const struct proc_ns_operations cgroupns_operations = {
 	.owner		= cgroupns_owner,
 };
 
-static __init int cgroup_namespaces_init(void)
-{
-	return 0;
-}
-subsys_initcall(cgroup_namespaces_init);
-
 #ifdef CONFIG_CGROUP_BPF
 int cgroup_bpf_attach(struct cgroup *cgrp, struct bpf_prog *prog,
 		      enum bpf_attach_type type, u32 flags)
