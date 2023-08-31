@@ -8,7 +8,6 @@
 #include <linux/io.h>
 #include <asm/mach/time.h>
 #include "soc.h"
-#include "platform.h"
 
 /*************************************************************************
  * Timer handling for EP93xx
@@ -60,7 +59,7 @@ static u64 notrace ep93xx_read_sched_clock(void)
 	return ret;
 }
 
-static cycle_t ep93xx_clocksource_read(struct clocksource *c)
+cycle_t ep93xx_clocksource_read(struct clocksource *c)
 {
 	u64 ret;
 
