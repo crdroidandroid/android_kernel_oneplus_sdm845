@@ -4,7 +4,7 @@ KNOWN BUGS
 After end of 4.9-stable maintenance, I try to further maintain
 our 4.9 Oneplus kernel tree. I try to fix as many bugs as possible,
 but sometimes a backport from mainline is not feasible or not done
-by the stable team, and sometimes backport from 4.14-stable to our
+by the stable team, and sometimes backport from 4.14-stable+ to our
 4.9 kernel tree is not feasible or not done for other reasons.
 
 Not applicable changes are not listed below.
@@ -18,3 +18,11 @@ I'll try to add notes here:
 4.14.308:
 
 71da2a151ed1a | rbd: avoid use-after-free in do_rbd_add() when rbd_dev_create() fails
+
+4.14.321:
+
+74a10924f5b5b | x86/speculation: Add force option to GDS mitigation
+
+4.14.322:
+
+d19a80db742ce | netfilter: nf_tables: incorrect error path handling with NFT_MSG_NEWRULE
