@@ -1109,7 +1109,7 @@ error:
 
 	return NULL;
 }
-EXPORT_SYMBOL(cx24123_attach);
+EXPORT_SYMBOL_GPL(cx24123_attach);
 
 static struct dvb_frontend_ops cx24123_ops = {
 	.delsys = { SYS_DVBS },

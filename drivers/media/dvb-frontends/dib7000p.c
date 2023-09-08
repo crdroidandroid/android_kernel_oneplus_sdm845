@@ -2802,7 +2802,7 @@ void *dib7000p_attach(struct dib7000p_ops *ops)
 
 	return ops;
 }
-EXPORT_SYMBOL(dib7000p_attach);
+EXPORT_SYMBOL_GPL(dib7000p_attach);
 
 static struct dvb_frontend_ops dib7000p_ops = {
 	.delsys = { SYS_DVBT },

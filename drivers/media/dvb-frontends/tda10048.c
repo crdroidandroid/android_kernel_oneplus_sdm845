@@ -1154,7 +1154,7 @@ error:
 	kfree(state);
 	return NULL;
 }
-EXPORT_SYMBOL(tda10048_attach);
+EXPORT_SYMBOL_GPL(tda10048_attach);
 
 static struct dvb_frontend_ops tda10048_ops = {
 	.delsys = { SYS_DVBT },

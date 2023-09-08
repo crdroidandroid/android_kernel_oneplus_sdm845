@@ -2558,7 +2558,7 @@ error:
 	kfree(st);
 	return NULL;
 }
-EXPORT_SYMBOL(dib9000_attach);
+EXPORT_SYMBOL_GPL(dib9000_attach);
 
 static struct dvb_frontend_ops dib9000_ops = {
 	.delsys = { SYS_DVBT },
