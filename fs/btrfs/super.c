@@ -938,6 +938,10 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
 			if (error)
 				goto out;
 			break;
+		case Opt_err:
+			btrfs_err(NULL, "unrecognized mount option '%s'", p);
+			error = -EINVAL;
+			goto out;
 		default:
 			break;
 		}
