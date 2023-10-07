@@ -296,6 +296,7 @@ static int esp_input_done2(struct sk_buff *skb, int err)
 	int hdr_len = skb_network_header_len(skb);
 	int padlen;
 	u8 nexthdr[2];
+	int ret;
 
 	kfree(ESP_SKB_CB(skb)->tmp);
 
@@ -315,7 +316,9 @@ static int esp_input_done2(struct sk_buff *skb, int err)
 
 	/* ... check padding bits here. Silly. :-) */
 
-	pskb_trim(skb, skb->len - alen - padlen - 2);
+	ret = pskb_trim(skb, skb->len - alen - padlen - 2);
+	if (unlikely(ret))
+		return ret;
 	__skb_pull(skb, hlen);
 	if (x->props.mode == XFRM_MODE_TUNNEL)
 		skb_reset_transport_header(skb);
