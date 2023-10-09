@@ -316,6 +316,7 @@ static int esp_input_done2(struct sk_buff *skb, int err)
 	int ihl;
 	u8 nexthdr[2];
 	int padlen;
+	int ret;
 
 	kfree(ESP_SKB_CB(skb)->tmp);
 
@@ -372,7 +373,9 @@ static int esp_input_done2(struct sk_buff *skb, int err)
 			skb->ip_summed = CHECKSUM_UNNECESSARY;
 	}
 
-	pskb_trim(skb, skb->len - alen - padlen - 2);
+	ret = pskb_trim(skb, skb->len - alen - padlen - 2);
+	if (unlikely(ret))
+		return ret;
 	__skb_pull(skb, hlen);
 	if (x->props.mode == XFRM_MODE_TUNNEL)
 		skb_reset_transport_header(skb);
