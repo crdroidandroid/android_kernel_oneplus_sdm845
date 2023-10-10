@@ -2419,6 +2419,8 @@ static int xfrm_do_migrate(struct sk_buff *skb, struct nlmsghdr *nlh,
 	if (!n)
 		return 0;
 
+	xfrm_migrate(&pi->sel, pi->dir, type, m, n, kmp, net);
+
 	if (attrs[XFRMA_IF_ID])
 		if_id = nla_get_u32(attrs[XFRMA_IF_ID]);
 
