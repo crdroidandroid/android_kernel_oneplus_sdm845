@@ -2262,6 +2262,7 @@ int kvm_set_msr_common(struct kvm_vcpu *vcpu, struct msr_data *msr_info)
 	case MSR_VM_HSAVE_PA:
 	case MSR_AMD64_PATCH_LOADER:
 	case MSR_AMD64_BU_CFG2:
+	case MSR_AMD64_TW_CFG:
 		break;
 
 	case MSR_IA32_UCODE_REV:
@@ -2543,6 +2544,7 @@ int kvm_get_msr_common(struct kvm_vcpu *vcpu, struct msr_data *msr_info)
 	case MSR_FAM10H_MMIO_CONF_BASE:
 	case MSR_AMD64_BU_CFG2:
 	case MSR_IA32_PERF_CTL:
+	case MSR_AMD64_TW_CFG:
 		msr_info->data = 0;
 		break;
 	case MSR_K7_EVNTSEL0 ... MSR_K7_EVNTSEL3:
