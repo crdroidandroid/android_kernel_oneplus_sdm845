@@ -150,7 +150,7 @@ fail:
 int read_hfi1_efi_var(struct hfi1_devdata *dd, const char *kind,
 		      unsigned long *size, void **return_data)
 {
-	char name[64];
+	char name[128];
 
 	/* create a common prefix */
 	snprintf(name, sizeof(name), "%04x:%02x:%02x.%x-%s",
