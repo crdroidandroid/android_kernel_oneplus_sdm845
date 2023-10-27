@@ -1381,6 +1381,9 @@ static int dwc3_probe(struct platform_device *pdev)
 	count++;
 
 	pm_runtime_allow(dev);
+
+	dma_set_max_seg_size(dev, UINT_MAX);
+
 	return 0;
 
 err_core_init:
