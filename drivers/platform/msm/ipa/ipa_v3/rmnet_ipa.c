@@ -818,7 +818,7 @@ static int find_vchannel_name_index(const char *vchannel_name)
 }
 
 
-static int ipa3_find_free_rmnet_index( )
+static int ipa3_find_free_rmnet_index(void)
 {
 	int i;
 
@@ -1523,13 +1523,13 @@ static int handle3_egress_format(struct net_device *dev,
 static int ipa3_wwan_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
 	int rc = 0;
-	int mru = 1000, epid = 1, mux_index, len ,free_index;
+	int mru = 1000, epid = 1, mux_index, len, free_index;
 	struct ipa_msg_meta msg_meta;
 	struct ipa_wan_msg *wan_msg = NULL;
 	struct rmnet_ioctl_extended_s extend_ioctl_data;
 	struct rmnet_ioctl_data_s ioctl_data;
 	struct ipa3_rmnet_mux_val *mux_channel;
-	uint32_t  mux_id;
+	uint32_t mux_id;
 	int rmnet_index;
 
 	IPAWANDBG("rmnet_ipa got ioctl number 0x%08x", cmd);
@@ -1703,9 +1703,9 @@ static int ipa3_wwan_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 				return rc;
 			}
 			mutex_lock(&rmnet_ipa3_ctx->add_mux_channel_lock);
-			if ((rmnet_ipa3_ctx->rmnet_index
-				>= MAX_NUM_OF_MUX_CHANNEL) &&
-			  	 (free_index ==  MAX_NUM_OF_MUX_CHANNEL)) {
+			if ((rmnet_ipa3_ctx->rmnet_index >=
+				MAX_NUM_OF_MUX_CHANNEL) &&
+				(free_index ==  MAX_NUM_OF_MUX_CHANNEL)) {
 				IPAWANERR("Exceed mux_channel limit(%d)\n",
 				rmnet_ipa3_ctx->rmnet_index);
 				mutex_unlock(&rmnet_ipa3_ctx->
@@ -1776,19 +1776,19 @@ static int ipa3_wwan_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 			mux_channel = rmnet_ipa3_ctx->mux_channel;
 			ipa3_del_qmap_hdr(mux_channel[mux_index].hdr_hdl);
 			IPAWANDBG("de-register device %s\n",
-				       	mux_channel[mux_index].vchannel_name);
+					mux_channel[mux_index].vchannel_name);
 			rc = ipa3_deregister_intf(mux_channel[mux_index].vchannel_name);
 			if (rc < 0) {
 				IPAWANDBG("de-register device %s(%d) failed\n",
 					mux_channel[mux_index].vchannel_name,
-				       	rmnet_index);
+					rmnet_index);
 				mutex_unlock(
 					&rmnet_ipa3_ctx->add_mux_channel_lock);
 				return rc;
 			}
 
 			memset(&mux_channel[mux_index], 0,
-				       	sizeof(struct ipa3_rmnet_mux_val));
+					sizeof(struct ipa3_rmnet_mux_val));
 			mutex_unlock(
 				&rmnet_ipa3_ctx->add_mux_channel_lock);
 			break;
