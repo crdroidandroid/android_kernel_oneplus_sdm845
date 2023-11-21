@@ -283,10 +283,15 @@ static int xgbe_get_settings(struct net_device *netdev,
 	cmd->advertising = pdata->phy.advertising;
 	cmd->lp_advertising = pdata->phy.lp_advertising;
 
-	cmd->autoneg = pdata->phy.autoneg;
-	ethtool_cmd_speed_set(cmd, pdata->phy.speed);
-	cmd->duplex = pdata->phy.duplex;
+	if (netif_carrier_ok(netdev)) {
+		ethtool_cmd_speed_set(cmd, pdata->phy.speed);
+		cmd->duplex = pdata->phy.duplex;
+	} else {
+		ethtool_cmd_speed_set(cmd, SPEED_UNKNOWN);
+		cmd->duplex = DUPLEX_UNKNOWN;
+	}
 
+	cmd->autoneg = pdata->phy.autoneg;
 	cmd->port = PORT_NONE;
 	cmd->transceiver = XCVR_INTERNAL;
 
