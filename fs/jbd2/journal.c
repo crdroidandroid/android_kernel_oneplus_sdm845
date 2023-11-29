@@ -1343,9 +1343,11 @@ static int jbd2_write_superblock(journal_t *journal, int write_flags)
 	if (!buffer_mapped(bh))
 		return -EIO;
 
-	trace_jbd2_write_superblock(journal, write_flags);
 	if (!(journal->j_flags & JBD2_BARRIER))
 		write_flags &= ~(REQ_FUA | REQ_PREFLUSH);
+
+	trace_jbd2_write_superblock(journal, write_flags);
+
 	lock_buffer(bh);
 	if (buffer_write_io_error(bh)) {
 		/*
