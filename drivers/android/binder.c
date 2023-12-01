@@ -62,6 +62,7 @@
 #include <linux/mutex.h>
 #include <linux/nsproxy.h>
 #include <linux/poll.h>
+#include <linux/eventpoll.h>
 #include <linux/debugfs.h>
 #include <linux/rbtree.h>
 #include <linux/sched.h>
@@ -4821,7 +4822,7 @@ static unsigned int binder_poll(struct file *filp,
 
 	thread = binder_get_thread(proc);
 	if (!thread)
-		return POLLERR;
+		return EPOLLERR;
 
 	binder_inner_proc_lock(thread->proc);
 	thread->looper |= BINDER_LOOPER_STATE_POLL;
