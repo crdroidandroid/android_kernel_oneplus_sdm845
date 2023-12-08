@@ -1306,7 +1306,7 @@ static void fp_detect(struct synaptics_ts_data *ts)
 		gf_opticalfp_irq_handler(0);
 		if (ts->fp_aod_cnt > 0)
 			need_reset = 1;
-			not_getbase = 0;
+		not_getbase = 0;
 		ts->fp_aod_cnt = 0;
 		break;
 	}
@@ -2219,31 +2219,31 @@ static ssize_t synap_write_address(struct file *file, const char __user *buffer,
 	&buf[5], &buf[6], &buf[7], &buf[8], &buf[9],
 	&buf[10], &buf[11], &buf[12], &buf[13], &buf[14],
 	&buf[15], &buf[16], &buf[17]);
-    for (i = 0;i < ret;i++)
-    {
-        TPD_DEBUG("buf[i]=0x%x,",buf[i]);
-    }
-    TPD_DEBUG("\n");
-    page= buf[0];
-    address = buf[1];
-    temp_block = buf[2];
-    wbyte = buf[3];
-    if (0xFF == temp_block)//the  mark is to write register else read register
-    {
-        for (i=0;i < wbyte;i++)
-        {
-            reg[i] = (char)buf[4+i];
-        }
-        ret = synaptics_rmi4_i2c_write_byte(ts->client,0xff,page);
-        ret = synaptics_rmi4_i2c_write_block(ts->client,(char)address,wbyte,reg);
-        TPD_DEBUG("%s write page=0x%x,address=0x%x\n",__func__,page,address);
-        for (i=0;i < wbyte;i++)
-        {
-            TPD_DEBUG("reg=0x%x\n",reg[i]);
-        }
-    }
-    else
-        block = temp_block;
+	for (i = 0;i < ret;i++)
+	{
+		TPD_DEBUG("buf[i]=0x%x,",buf[i]);
+	}
+	TPD_DEBUG("\n");
+	page = buf[0];
+	address = buf[1];
+	temp_block = buf[2];
+	wbyte = buf[3];
+	if (0xFF == temp_block)//the  mark is to write register else read register
+	{
+		for (i = 0;i < wbyte;i++)
+		{
+			reg[i] = (char)buf[4+i];
+		}
+		ret = synaptics_rmi4_i2c_write_byte(ts->client,0xff,page);
+		ret = synaptics_rmi4_i2c_write_block(ts->client,(char)address,wbyte,reg);
+		TPD_DEBUG("%s write page=0x%x,address=0x%x\n",__func__,page,address);
+		for (i = 0;i < wbyte;i++)
+		{
+			TPD_DEBUG("reg=0x%x\n",reg[i]);
+		}
+	}
+	else
+		block = temp_block;
 	return count;
 }
 
