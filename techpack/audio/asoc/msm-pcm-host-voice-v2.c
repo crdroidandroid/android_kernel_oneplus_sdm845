@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  */
 
 #include <linux/init.h>
@@ -674,6 +683,11 @@ static void hpcm_copy_playback_data_from_queue(struct dai_data *dai_data,
 				struct hpcm_buf_node, list);
 		list_del(&buf_node->list);
 		*len = buf_node->frame.len;
+		if (*len > HPCM_MAX_VOC_PKT_SIZE) {
+			pr_err("%s: Playback data len %d overflow\n",
+					__func__, *len);
+			return;
+		}
 		memcpy((u8 *)dai_data->vocpcm_ion_buffer.kvaddr,
 		       &buf_node->frame.voc_pkt[0],
 		       buf_node->frame.len);
@@ -701,9 +715,9 @@ static void hpcm_copy_capture_data_to_queue(struct dai_data *dai_data,
 	if (dai_data->substream == NULL)
 		return;
 
-	if (len >= HPCM_MAX_VOC_PKT_SIZE) {
-		pr_err("%s: Copy capture data len %d is > HPCM_MAX_VOC_PKT_SIZE\n",
-			__func__, len);
+	if (len > HPCM_MAX_VOC_PKT_SIZE) {
+		pr_err("%s: Copy capture data len %d overflow\n",
+				__func__, len);
 		return;
 	}
 

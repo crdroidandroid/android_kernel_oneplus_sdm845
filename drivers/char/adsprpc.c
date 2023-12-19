@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -362,7 +362,7 @@ struct fastrpc_mmap {
 	int uncached;
 	int secure;
 	uintptr_t attr;
-	bool is_filemap; /*flag to indicate map used in process init*/
+	bool is_filemap; /* flag to indicate map used in process init */
 	unsigned int ctx_refs; /* Indicates reference count for context map */
 };
 
@@ -715,7 +715,7 @@ static int fastrpc_mmap_remove(struct fastrpc_file *fl, uintptr_t va,
 	hlist_for_each_entry_safe(map, n, &me->maps, hn) {
 		if (map->refs == 1 && map->raddr == va &&
 			map->raddr + map->len == va + len &&
-			/*Remove map if not used in process initialization*/
+			/* Remove map if not used in process initialization */
 			!map->is_filemap) {
 			match = map;
 			hlist_del_init(&map->hn);
@@ -729,9 +729,9 @@ static int fastrpc_mmap_remove(struct fastrpc_file *fl, uintptr_t va,
 	}
 	hlist_for_each_entry_safe(map, n, &fl->maps, hn) {
 		/* Remove if only one reference map and no context map */
-		if (map->refs == 1 && !map->ctx_refs &&  map->raddr == va &&
+		if (map->refs == 1 && !map->ctx_refs && map->raddr == va &&
 			map->raddr + map->len == va + len &&
-			/*Remove map if not used in process initialization*/
+			/* Remove map if not used in process initialization */
 			!map->is_filemap) {
 			match = map;
 			hlist_del_init(&map->hn);
