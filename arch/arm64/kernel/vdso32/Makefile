@@ -13,6 +13,12 @@ else
   CC_ARM32 := $(CROSS_COMPILE_ARM32)$(cc-name)
 endif
 
+ifeq ($(CONFIG_LD_IS_LLD), y)
+LD_COMPAT ?= $(LD)
+else
+LD_COMPAT ?= $(CROSS_COMPILE_ARM32)ld
+endif
+
 # Same as cc-*option, but using CC_ARM32 instead of CC
 cc32-option = $(call try-run,\
         $(CC_ARM32) $(1) -c -x c /dev/null -o "$$TMP",$(1),$(2))
@@ -84,19 +90,17 @@ VDSO_CFLAGS += -D__uint128_t='void*'
 # Silence some warnings coming from headers that operate on long's
 # (on GCC 4.8 or older, there is unfortunately no way to silence this warning)
 VDSO_CFLAGS += $(call cc32-disable-warning,shift-count-overflow)
-VDSO_CFLAGS += -Wno-int-to-pointer-cast
+VDSO_CFLAGS += -Wno-int-to-pointer-cast -mfloat-abi=soft
 
 VDSO_AFLAGS := $(VDSO_CAFLAGS)
 VDSO_AFLAGS += -D__ASSEMBLY__
 
-VDSO_LDFLAGS := $(VDSO_CPPFLAGS)
 # From arm vDSO Makefile
-VDSO_LDFLAGS += -Wl,-Bsymbolic -Wl,--no-undefined -Wl,-soname=linux-vdso.so.1
-VDSO_LDFLAGS += -Wl,-z,max-page-size=4096 -Wl,-z,common-page-size=4096
-VDSO_LDFLAGS += -nostdlib -shared -mfloat-abi=soft
-VDSO_LDFLAGS += $(call cc32-ldoption,-Wl$(comma)--hash-style=sysv)
-VDSO_LDFLAGS += $(call cc32-ldoption,-Wl$(comma)--build-id)
-VDSO_LDFLAGS += $(call cc32-ldoption,-fuse-ld=bfd)
+VDSO_LDFLAGS += -Bsymbolic --no-undefined -soname=linux-vdso.so.1
+VDSO_LDFLAGS += -z max-page-size=4096 -z common-page-size=4096 -nostdlib -shared 
+VDSO_LDFLAGS += --hash-style=sysv
+VDSO_LDFLAGS += --build-id
+VDSO_LDFLAGS += -fuse-ld=bfd
 
 
 # Borrow vdsomunge.c from the arm vDSO
@@ -144,8 +148,8 @@ $(asm-obj-vdso): %.o: %.S FORCE
 
 # Actual build commands
 quiet_cmd_vdsold = VDSOL32   $@
-      cmd_vdsold = $(CC_ARM32) -Wp,-MD,$(depfile) $(VDSO_LDFLAGS) \
-                   -Wl,-T $(filter %.lds,$^) $(filter %.o,$^) -o $@
+      cmd_vdsold = $(LD_COMPAT) $(VDSO_LDFLAGS) \
+                   -T $(filter %.lds,$^) $(filter %.o,$^) -o $@
 quiet_cmd_vdsocc = VDSOC32   $@
       cmd_vdsocc = $(CC_ARM32) -Wp,-MD,$(depfile) $(VDSO_CFLAGS) -c -o $@ $<
 quiet_cmd_vdsoas = VDSOA32   $@
