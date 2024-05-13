@@ -1287,13 +1287,26 @@ const struct bpf_func_proto bpf_get_current_pid_tgid_proto __weak;
 const struct bpf_func_proto bpf_get_current_uid_gid_proto __weak;
 const struct bpf_func_proto bpf_get_current_comm_proto __weak;
 
-const struct bpf_func_proto * __weak bpf_get_trace_printk_proto(void)
+BPF_CALL_5(bpf_trace_printk_dummy, char *, fmt, u32, fmt_size, u64, arg1,
+	   u64, arg2, u64, arg3)
 {
-	return NULL;
+	return 0;
 }
 
-u64 __weak
-bpf_event_output(struct bpf_map *map, u64 flags, void *meta, u64 meta_size,
+static const struct bpf_func_proto bpf_trace_printk_dummy_proto = {
+	.func		= bpf_trace_printk_dummy,
+	.gpl_only	= true,
+	.ret_type	= RET_INTEGER,
+	.arg1_type	= ARG_PTR_TO_STACK,
+	.arg2_type	= ARG_CONST_STACK_SIZE,
+};
+
+const struct bpf_func_proto * __weak bpf_get_trace_printk_proto(void)
+{
+	return &bpf_trace_printk_dummy_proto;
+}
+
+u64 __weak bpf_event_output(struct bpf_map *map, u64 flags, void *meta, u64 meta_size,
 		 void *ctx, u64 ctx_size, bpf_ctx_copy_t ctx_copy)
 {
 	return -ENOTSUPP;
