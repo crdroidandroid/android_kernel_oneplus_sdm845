@@ -9,6 +9,7 @@ obj-$(CONFIG_QPNP_SMB2)		+= step-chg-jeita.o battery.o qpnp-smb2.o smb-lib.o pmi
 obj-$(CONFIG_SMB138X_CHARGER)	+= step-chg-jeita.o smb138x-charger.o smb-lib.o pmic-voter.o storm-watch.o battery.o
 obj-$(CONFIG_QPNP_QG)		+= qpnp-qg.o pmic-voter.o qg-util.o qg-soc.o qg-sdam.o qg-battery-profile.o qg-profile-lib.o fg-alg.o
 obj-$(CONFIG_FG_BQ27541)	+= bq27541_fuelgauger.o
+CFLAGS_oneplus_fastchg.o += $(call cc-disable-warning, fortify-source)
 obj-$(CONFIG_ONEPLUS_FASTCHG)	+= oneplus_fastchg.o op_dash_adapter.o
 obj-$(CONFIG_QPNP_QG)		+= qpnp-qg.o pmic-voter.o qg-util.o qg-soc.o qg-sdam.o qg-battery-profile.o qg-profile-lib.o fg-alg.o
 obj-$(CONFIG_QPNP_QNOVO)	+= qpnp-qnovo.o battery.o

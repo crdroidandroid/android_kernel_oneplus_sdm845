@@ -109,5 +109,6 @@ obj-$(CONFIG_TOUCHSCREEN_GT9XX_v28)		+= gt9xx_v2.8/
 obj-$(CONFIG_TOUCHSCREEN_HIMAX_CHIPSET)	+= hxchipset/
 obj-$(CONFIG_TOUCHSCREEN_EKTF3XXX_CHIPSET) += ektf3xxx/
 obj-$(CONFIG_TOUCHSCREEN_RAYDIUM_CHIPSET)  += raydium_wt030/
+CFLAGS_synaptics_driver_s3320.o += $(call cc-disable-warning, fortify-source)
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_S3320_I2C_RMI) += synaptics_driver_s3320.o
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_S3320_I2C_RMI) += synaptics_dsx_fw_update.o
