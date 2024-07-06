@@ -6,4 +6,5 @@ ccflags-y += -Idrivers/media/platform/msm/camera_oneplus/cam_sensor_module/cam_c
 ccflags-y += -Idrivers/media/platform/msm/camera_oneplus/cam_req_mgr
 ccflags-y += -Idrivers/media/platform/msm/camera_oneplus/cam_smmu/
 
+CFLAGS_cam_csiphy_soc.o += $(call cc-disable-warning, fortify-source)
 obj-$(CONFIG_SPECTRA_CAMERA) += cam_csiphy_soc.o cam_csiphy_dev.o cam_csiphy_core.o

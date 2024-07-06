@@ -1729,6 +1729,8 @@ endif
 #######################################################
 
 ############## HTC ##########
+CFLAGS_htc_recv.o += $(call cc-disable-warning, fortify-source)
+
 HTC_DIR := htc
 HTC_INC := -I$(WLAN_COMMON_INC)/$(HTC_DIR)
 
