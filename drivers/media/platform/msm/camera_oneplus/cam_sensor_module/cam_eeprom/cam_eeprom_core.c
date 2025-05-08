@@ -19,7 +19,6 @@
 #include "cam_eeprom_soc.h"
 #include "cam_debug_util.h"
 
-#ifdef CONFIG_PROJECT_INFO
 #include <linux/project_info.h>
 
 struct ois_vendor_match_tbl {
@@ -31,7 +30,6 @@ static struct ois_vendor_match_tbl match_tbl[] = {
 	{0x24, "BU24218GWL", "Rohm"},
 	{0x28, "BU24228GWL", "Rohm"},
 };
-#endif
 
 /**
  * cam_eeprom_read_memory() - read map data into buffer
@@ -178,9 +176,8 @@ static int cam_eeprom_read_memory(struct cam_eeprom_ctrl_t *e_ctrl,
 				CAM_ERR(CAM_EEPROM, "failed: to read 0x%x rc %d",
 					ois_driver_id_reg_addr+1, ret);
 			} else {
-				ois_driver_id = 
+				ois_driver_id =
 					((reg_data & 0xFF) << 8) | ois_driver_id;
-#ifdef CONFIG_PROJECT_INFO
 				if (ois_driver_id == match_tbl[0].ois_id) {
 					push_component_info(OIS,
 						match_tbl[0].ois_name,
@@ -189,7 +186,6 @@ static int cam_eeprom_read_memory(struct cam_eeprom_ctrl_t *e_ctrl,
 					push_component_info(OIS, match_tbl[1].ois_name,
 						match_tbl[1].vendor_name);
 				}
-#endif
 				CAM_ERR(CAM_EEPROM, "OIS module 0x%x", ois_driver_id);
 			}
 		}
