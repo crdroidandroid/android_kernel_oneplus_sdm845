@@ -711,38 +711,10 @@ int f2fs_truncate(struct inode *inode)
 	return 0;
 }
 
-int f2fs_getattr(struct vfsmount *mnt,
-			struct dentry *dentry, struct kstat *stat)
+int f2fs_getattr(const struct path *path, struct kstat *stat,
+		 u32 request_mask, unsigned int flags)
 {
-	struct inode *inode = d_inode(dentry);
-#if 0
-	struct f2fs_inode_info *fi = F2FS_I(inode);
-	struct f2fs_inode *ri;
-	unsigned int flags;
-
-	if (f2fs_has_extra_attr(inode) &&
-			f2fs_sb_has_inode_crtime(F2FS_I_SB(inode)) &&
-			F2FS_FITS_IN_INODE(ri, fi->i_extra_isize, i_crtime)) {
-		stat->result_mask |= STATX_BTIME;
-		stat->btime.tv_sec = fi->i_crtime.tv_sec;
-		stat->btime.tv_nsec = fi->i_crtime.tv_nsec;
-	}
-
-	flags = fi->i_flags;
-	if (flags & F2FS_APPEND_FL)
-		stat->attributes |= STATX_ATTR_APPEND;
-	if (IS_ENCRYPTED(inode))
-		stat->attributes |= STATX_ATTR_ENCRYPTED;
-	if (flags & F2FS_IMMUTABLE_FL)
-		stat->attributes |= STATX_ATTR_IMMUTABLE;
-	if (flags & F2FS_NODUMP_FL)
-		stat->attributes |= STATX_ATTR_NODUMP;
-
-	stat->attributes_mask |= (STATX_ATTR_APPEND |
-				  STATX_ATTR_ENCRYPTED |
-				  STATX_ATTR_IMMUTABLE |
-				  STATX_ATTR_NODUMP);
-#endif
+	struct inode *inode = d_inode(path->dentry);
 	generic_fillattr(inode, stat);
 
 	/* we need to show initial sectors used for inline_data/dentries */

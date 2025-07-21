@@ -6,7 +6,7 @@
 #include <linux/version.h>
 #include <linux/slab.h>
 #include <linux/buffer_head.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 #include <linux/cred.h>
 #endif
 #include <linux/mount.h>
@@ -259,7 +259,7 @@ int exfat_getattr(struct user_namespace *mnt_uerns, const struct path *path,
 		  unsigned int query_flags)
 #endif
 #else
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 int exfat_getattr(const struct path *path, struct kstat *stat,
 		unsigned int request_mask, unsigned int query_flags)
 #else
@@ -268,7 +268,7 @@ int exfat_getattr(struct vfsmount *mnt, struct dentry *dentry,
 #endif
 #endif
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 	struct inode *inode = d_backing_inode(path->dentry);
 	struct exfat_inode_info *ei = EXFAT_I(inode);
 #else
@@ -289,7 +289,7 @@ int exfat_getattr(struct vfsmount *mnt, struct dentry *dentry,
 	generic_fillattr(inode, stat);
 #endif
 	exfat_truncate_atime(&stat->atime);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 	stat->result_mask |= STATX_BTIME;
 	stat->btime.tv_sec = ei->i_crtime.tv_sec;
 	stat->btime.tv_nsec = ei->i_crtime.tv_nsec;
